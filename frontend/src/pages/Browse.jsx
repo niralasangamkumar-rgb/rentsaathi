@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ListingCard from '../components/ListingCard';
 import CategoryFilter from '../components/CategoryFilter';
-import SearchBar from '../components/SearchBar';
-import { getListings } from '../services/listingService';
+import { getRegularListings, getAreas } from '../services/listingService';
 import { useAuth } from '../contexts/AuthContext';
 import { useCity } from '../contexts/CityContext';
 import { getUserFavorites } from '../services/favoriteService';
@@ -17,12 +16,15 @@ export default function Browse() {
   const [favorites, setFavorites] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || null);
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
+  const [selectedArea, setSelectedArea] = useState('');
+  const [areas, setAreas] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
   const [lastDoc, setLastDoc] = useState(null);
   const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
     loadListings(true);
+    loadAreas();
     if (currentUser) {
       loadFavorites();
     }
@@ -36,8 +38,9 @@ export default function Browse() {
       if (selectedCategory) filters.category = selectedCategory;
       if (priceRange.min) filters.minPrice = parseInt(priceRange.min);
       if (priceRange.max) filters.maxPrice = parseInt(priceRange.max);
+      if (selectedArea) filters.area = selectedArea;
 
-      const { listings: newListings, lastDoc: newLastDoc } = await getListings(
+      const { listings: newListings, lastDoc: newLastDoc } = await getRegularListings(
         filters,
         reset ? null : lastDoc,
         12
@@ -55,6 +58,15 @@ export default function Browse() {
       console.error('Error loading listings:', error);
     }
     setLoading(false);
+  };
+
+  const loadAreas = async () => {
+    try {
+      const areaList = await getAreas(selectedCity?.id);
+      setAreas(areaList);
+    } catch (error) {
+      console.error('Error loading areas:', error);
+    }
   };
 
   const loadFavorites = async () => {
@@ -80,18 +92,36 @@ export default function Browse() {
     setShowFilters(false);
   };
 
+  const handleClearFilters = () => {
+    setPriceRange({ min: '', max: '' });
+    setSelectedArea('');
+    setSelectedCategory(null);
+    setSearchParams({});
+    loadListings(true);
+    setShowFilters(false);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50" data-testid="browse-page">
-      {/* Search Header */}
+      {/* Header */}
       <div className="bg-white border-b border-gray-100 sticky top-16 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col md:flex-row md:items-center gap-4">
-            <div className="flex-1">
-              <SearchBar onSearch={(term) => console.log('Search:', term)} />
-            </div>
+            {/* City Info */}
+            {selectedCity && (
+              <div className="flex items-center text-sm text-gray-600">
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                </svg>
+                {selectedCity.name}
+              </div>
+            )}
+            
+            <div className="flex-1" />
+            
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center justify-center space-x-2 px-4 py-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition md:w-auto"
+              className="flex items-center justify-center space-x-2 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
               data-testid="filter-btn"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -115,44 +145,77 @@ export default function Browse() {
       {showFilters && (
         <div className="bg-white border-b border-gray-100 shadow-sm" data-testid="filters-panel">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <h3 className="font-semibold text-gray-800 mb-4">Price Range</h3>
-            <div className="flex items-center gap-4">
-              <input
-                type="number"
-                placeholder="Min Price"
-                value={priceRange.min}
-                onChange={(e) => setPriceRange({ ...priceRange, min: e.target.value })}
-                className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                data-testid="min-price-input"
-              />
-              <span className="text-gray-400">to</span>
-              <input
-                type="number"
-                placeholder="Max Price"
-                value={priceRange.max}
-                onChange={(e) => setPriceRange({ ...priceRange, max: e.target.value })}
-                className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                data-testid="max-price-input"
-              />
-              <button
-                onClick={handleApplyFilters}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition"
-                data-testid="apply-filters-btn"
-              >
-                Apply
-              </button>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Price Range */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Price Range</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    placeholder="Min"
+                    value={priceRange.min}
+                    onChange={(e) => setPriceRange({ ...priceRange, min: e.target.value })}
+                    className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    data-testid="min-price-input"
+                  />
+                  <span className="text-gray-400">to</span>
+                  <input
+                    type="number"
+                    placeholder="Max"
+                    value={priceRange.max}
+                    onChange={(e) => setPriceRange({ ...priceRange, max: e.target.value })}
+                    className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    data-testid="max-price-input"
+                  />
+                </div>
+              </div>
+
+              {/* Area Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Area / Locality</label>
+                <select
+                  value={selectedArea}
+                  onChange={(e) => setSelectedArea(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  data-testid="area-filter"
+                >
+                  <option value="">All Areas</option>
+                  {areas.map((area) => (
+                    <option key={area} value={area}>{area}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Filter Actions */}
+              <div className="flex items-end gap-2">
+                <button
+                  onClick={handleApplyFilters}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition text-sm"
+                  data-testid="apply-filters-btn"
+                >
+                  Apply Filters
+                </button>
+                <button
+                  onClick={handleClearFilters}
+                  className="px-4 py-2 border border-gray-200 rounded-lg font-medium hover:bg-gray-50 transition text-sm"
+                  data-testid="clear-filters-btn"
+                >
+                  Clear
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
 
       {/* Listings Grid */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-800">
+          <h1 className="text-xl font-bold text-gray-800">
             {selectedCategory
               ? `${selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)} Rentals`
               : 'All Listings'}
+            {selectedCity && <span className="text-gray-500 font-normal text-base ml-2">in {selectedCity.name}</span>}
           </h1>
           <span className="text-sm text-gray-500">{listings.length} results</span>
         </div>
@@ -191,9 +254,9 @@ export default function Browse() {
           </>
         ) : (
           <div className="text-center py-16">
-            <div className="text-6xl mb-4">💭</div>
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">No listings found</h3>
-            <p className="text-gray-500">Try adjusting your filters or check back later</p>
+            <div className="text-5xl mb-4">🔍</div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">No listings found</h3>
+            <p className="text-gray-500 text-sm">Try adjusting your filters or check back later</p>
           </div>
         )}
       </div>
