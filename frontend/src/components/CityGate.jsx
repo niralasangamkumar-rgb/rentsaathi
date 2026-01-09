@@ -20,8 +20,8 @@ export default function CityGate({ children }) {
     selectCity(city);
   };
 
-  // If city is already selected, show the app
-  if (selectedCity) {
+  // If city is already selected OR on auth pages, show the app
+  if (selectedCity || isAuthPage) {
     return children;
   }
 
