@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import CitySelector from './CitySelector';
 
 export default function Navbar() {
   const { currentUser, logout } = useAuth();
@@ -24,12 +25,15 @@ export default function Navbar() {
     <nav className="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-50" data-testid="navbar">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
-          {/* Logo */}
-          <div className="flex items-center">
+          {/* Logo and City Selector */}
+          <div className="flex items-center space-x-4">
             <Link to="/" className="flex items-center space-x-2" data-testid="logo">
               <span className="text-2xl">🏠</span>
               <span className="text-xl font-bold text-blue-600">RentSaathi</span>
             </Link>
+            <div className="hidden sm:block">
+              <CitySelector compact />
+            </div>
           </div>
 
           {/* Desktop Navigation */}
