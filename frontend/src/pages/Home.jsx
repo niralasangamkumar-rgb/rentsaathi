@@ -64,26 +64,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Categories Section */}
-      <section className="py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">Browse by Category</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-            {categories.map((category) => (
-              <Link
-                key={category.id}
-                to={`/browse?category=${category.id}`}
-                className="bg-white rounded-xl p-6 text-center shadow-sm border border-gray-100 hover:shadow-md hover:border-blue-200 transition"
-                data-testid={`category-card-${category.id}`}
-              >
-                <span className="text-3xl block mb-2">{category.icon}</span>
-                <span className="text-sm font-medium text-gray-700">{category.name}</span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Featured Listings */}
       <section className="py-12 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -132,6 +112,26 @@ export default function Home() {
               )}
             </div>
           )}
+        </div>
+      </section>
+
+      {/* Categories Section */}
+      <section className="py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">Browse by Category</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+            {categories.map((category) => (
+              <Link
+                key={category.id}
+                to={`/browse?category=${category.id}`}
+                className="bg-white rounded-xl p-6 text-center shadow-sm border border-gray-100 hover:shadow-md hover:border-blue-200 transition"
+                data-testid={`category-card-${category.id}`}
+              >
+                <span className="text-3xl block mb-2">{category.icon}</span>
+                <span className="text-sm font-medium text-gray-700">{category.name}</span>
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
 
