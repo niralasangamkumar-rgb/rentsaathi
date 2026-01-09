@@ -3,15 +3,16 @@ import { Link } from 'react-router-dom';
 import ListingCard from '../components/ListingCard';
 import CategoryFilter from '../components/CategoryFilter';
 import SearchBar from '../components/SearchBar';
-import { getListings, categories } from '../services/listingService';
+import { getRegularListings, getFeaturedListings, categories } from '../services/listingService';
 import { useAuth } from '../contexts/AuthContext';
 import { useCity } from '../contexts/CityContext';
 import { getUserFavorites } from '../services/favoriteService';
 
 export default function Home() {
-  const { currentUser } = useAuth();
+  const { currentUser, userProfile } = useAuth();
   const { selectedCity } = useCity();
   const [featuredListings, setFeaturedListings] = useState([]);
+  const [regularListings, setRegularListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [favorites, setFavorites] = useState([]);
@@ -26,11 +27,16 @@ export default function Home() {
   const loadListings = async () => {
     setLoading(true);
     try {
+      // Load featured listings
+      const featured = await getFeaturedListings(selectedCity?.id, 4);
+      setFeaturedListings(featured);
+
+      // Load regular listings
       const filters = {};
       if (selectedCategory) filters.category = selectedCategory;
       if (selectedCity) filters.cityId = selectedCity.id;
-      const { listings } = await getListings(filters, null, 8);
-      setFeaturedListings(listings);
+      const { listings } = await getRegularListings(filters, null, 8);
+      setRegularListings(listings);
     } catch (error) {
       console.error('Error loading listings:', error);
     }
@@ -64,15 +70,50 @@ export default function Home() {
             <div className="max-w-2xl mx-auto">
               <SearchBar onSearch={(term) => console.log('Search:', term)} />
             </div>
+
+            {/* Selected City Badge */}
+            {selectedCity && (
+              <p className="mt-4 text-blue-200 text-sm">
+                📍 Showing listings in <span className="font-semibold text-white">{selectedCity.name}</span>
+              </p>
+            )}
           </div>
         </div>
       </section>
 
       {/* Featured Listings */}
-      <section className="py-12 bg-white">
+      {featuredListings.length > 0 && (
+        <section className="py-8 bg-gradient-to-b from-amber-50 to-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-2">
+                <span className="text-xl">⭐</span>
+                <h2 className="text-xl font-bold text-gray-800">Featured Listings</h2>
+              </div>
+              <Link to="/browse" className="text-blue-600 hover:text-blue-700 font-medium text-sm">
+                View All →
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {featuredListings.map((listing) => (
+                <ListingCard
+                  key={listing.id}
+                  listing={listing}
+                  isFavorited={favorites.includes(listing.id)}
+                  featured
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Regular Listings */}
+      <section className="py-8 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-800">Featured Listings</h2>
+            <h2 className="text-xl font-bold text-gray-800">All Listings</h2>
             <Link to="/browse" className="text-blue-600 hover:text-blue-700 font-medium text-sm">
               View All →
             </Link>
@@ -93,9 +134,9 @@ export default function Home() {
                 <div key={i} className="bg-gray-100 rounded-xl h-72 animate-pulse" />
               ))}
             </div>
-          ) : featuredListings.length > 0 ? (
+          ) : regularListings.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {featuredListings.map((listing) => (
+              {regularListings.map((listing) => (
                 <ListingCard
                   key={listing.id}
                   listing={listing}
@@ -105,13 +146,13 @@ export default function Home() {
             </div>
           ) : (
             <div className="text-center py-12">
-              <p className="text-gray-500">No listings found. Be the first to post one!</p>
-              {currentUser && (
+              <p className="text-gray-500">No listings found in {selectedCity?.name || 'your area'}.</p>
+              {currentUser && userProfile?.role === 'owner' && (
                 <Link
                   to="/create-listing"
                   className="inline-block mt-4 px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition"
                 >
-                  Create Listing
+                  Post Your First Listing
                 </Link>
               )}
             </div>
@@ -120,19 +161,19 @@ export default function Home() {
       </section>
 
       {/* Categories Section */}
-      <section className="py-12">
+      <section className="py-8 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">Browse by Category</h2>
+          <h2 className="text-xl font-bold text-gray-800 mb-6">Browse by Category</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
             {categories.map((category) => (
               <Link
                 key={category.id}
                 to={`/browse?category=${category.id}`}
-                className="bg-white rounded-xl p-6 text-center shadow-sm border border-gray-100 hover:shadow-md hover:border-blue-200 transition"
+                className="bg-white rounded-xl p-4 text-center shadow-sm border border-gray-100 hover:shadow-md hover:border-blue-200 transition"
                 data-testid={`category-card-${category.id}`}
               >
-                <span className="text-3xl block mb-2">{category.icon}</span>
-                <span className="text-sm font-medium text-gray-700">{category.name}</span>
+                <span className="text-2xl block mb-2">{category.icon}</span>
+                <span className="text-xs font-medium text-gray-700">{category.name}</span>
               </Link>
             ))}
           </div>
@@ -140,30 +181,30 @@ export default function Home() {
       </section>
 
       {/* How It Works */}
-      <section className="py-16 bg-gray-50">
+      <section className="py-12 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-gray-800 text-center mb-12">How RentSaathi Works</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <h2 className="text-xl font-bold text-gray-800 text-center mb-8">How RentSaathi Works</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="text-center">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">🔍</span>
+              <div className="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-xl">🔍</span>
               </div>
-              <h3 className="font-semibold text-gray-800 mb-2">Search</h3>
-              <p className="text-gray-600 text-sm">Browse through thousands of rental listings across multiple categories</p>
+              <h3 className="font-semibold text-gray-800 mb-1">Search</h3>
+              <p className="text-gray-600 text-sm">Browse through rental listings</p>
             </div>
             <div className="text-center">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">📞</span>
+              <div className="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-xl">📞</span>
               </div>
-              <h3 className="font-semibold text-gray-800 mb-2">Contact</h3>
-              <p className="text-gray-600 text-sm">Connect directly with property owners via phone, email, or chat</p>
+              <h3 className="font-semibold text-gray-800 mb-1">Contact</h3>
+              <p className="text-gray-600 text-sm">Call or WhatsApp the owner</p>
             </div>
             <div className="text-center">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">✅</span>
+              <div className="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-xl">✅</span>
               </div>
-              <h3 className="font-semibold text-gray-800 mb-2">Rent</h3>
-              <p className="text-gray-600 text-sm">Visit, verify, and finalize your perfect rental space or vehicle</p>
+              <h3 className="font-semibold text-gray-800 mb-1">Rent</h3>
+              <p className="text-gray-600 text-sm">Visit and finalize your rental</p>
             </div>
           </div>
         </div>
@@ -171,13 +212,13 @@ export default function Home() {
 
       {/* CTA Section */}
       {!currentUser && (
-        <section className="py-16 bg-blue-600">
+        <section className="py-12 bg-blue-600">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-3xl font-bold text-white mb-4">Ready to find your rental?</h2>
-            <p className="text-blue-100 mb-8">Join thousands of users who found their perfect space with RentSaathi</p>
+            <h2 className="text-2xl font-bold text-white mb-3">Ready to find your rental?</h2>
+            <p className="text-blue-100 mb-6">Join thousands of users on RentSaathi</p>
             <Link
               to="/register"
-              className="inline-block px-8 py-4 bg-white text-blue-600 rounded-lg font-bold hover:bg-gray-100 transition"
+              className="inline-block px-6 py-3 bg-white text-blue-600 rounded-lg font-bold hover:bg-gray-100 transition"
               data-testid="cta-signup"
             >
               Get Started Free
@@ -187,19 +228,19 @@ export default function Home() {
       )}
 
       {/* Footer */}
-      <footer className="bg-gray-800 text-gray-300 py-12">
+      <footer className="bg-gray-800 text-gray-300 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             <div>
-              <div className="flex items-center space-x-2 mb-4">
-                <span className="text-2xl">🏠</span>
-                <span className="text-xl font-bold text-white">RentSaathi</span>
+              <div className="flex items-center space-x-2 mb-3">
+                <span className="text-xl">🏠</span>
+                <span className="text-lg font-bold text-white">RentSaathi</span>
               </div>
-              <p className="text-sm">Your trusted rental marketplace for hostels, PGs, rooms, flats, and vehicles.</p>
+              <p className="text-xs">Your trusted rental marketplace.</p>
             </div>
             <div>
-              <h4 className="font-semibold text-white mb-4">Categories</h4>
-              <ul className="space-y-2 text-sm">
+              <h4 className="font-semibold text-white mb-3 text-sm">Properties</h4>
+              <ul className="space-y-1 text-xs">
                 <li><Link to="/browse?category=hostel" className="hover:text-white">Hostels</Link></li>
                 <li><Link to="/browse?category=pg" className="hover:text-white">PG</Link></li>
                 <li><Link to="/browse?category=flat" className="hover:text-white">Flats</Link></li>
@@ -207,23 +248,22 @@ export default function Home() {
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold text-white mb-4">Vehicles</h4>
-              <ul className="space-y-2 text-sm">
+              <h4 className="font-semibold text-white mb-3 text-sm">Vehicles</h4>
+              <ul className="space-y-1 text-xs">
                 <li><Link to="/browse?category=bike" className="hover:text-white">Bike Rent</Link></li>
                 <li><Link to="/browse?category=car" className="hover:text-white">Car Rent</Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold text-white mb-4">Support</h4>
-              <ul className="space-y-2 text-sm">
+              <h4 className="font-semibold text-white mb-3 text-sm">Support</h4>
+              <ul className="space-y-1 text-xs">
                 <li><a href="#" className="hover:text-white">Help Center</a></li>
                 <li><a href="#" className="hover:text-white">Contact Us</a></li>
-                <li><a href="#" className="hover:text-white">Privacy Policy</a></li>
               </ul>
             </div>
           </div>
-          <div className="border-t border-gray-700 mt-8 pt-8 text-center text-sm">
-            <p>&copy; 2025 RentSaathi. All rights reserved.</p>
+          <div className="border-t border-gray-700 mt-6 pt-6 text-center text-xs">
+            <p>© 2025 RentSaathi. All rights reserved.</p>
           </div>
         </div>
       </footer>
