@@ -14,13 +14,64 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import './App.css';
 
-// Protected Route Component
+// Protected Route - requires login
 function ProtectedRoute({ children }) {
-  const { currentUser } = useAuth();
+  const { currentUser, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="mt-2 text-gray-500">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+  
   return currentUser ? children : <Navigate to="/login" />;
 }
 
+// Owner Route - requires login AND owner role
+function OwnerRoute({ children }) {
+  const { currentUser, userProfile, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="mt-2 text-gray-500">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!currentUser) {
+    return <Navigate to="/login" />;
+  }
+  
+  if (userProfile?.role !== 'owner') {
+    return <Navigate to="/" />;
+  }
+  
+  return children;
+}
+
 function AppContent() {
+  const { loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="mt-2 text-gray-500">Loading RentSaathi...</p>
+        </div>
+      </div>
+    );
+  }
+  
   return (
     <Router>
       <CityGate>
@@ -35,17 +86,17 @@ function AppContent() {
             <Route
               path="/create-listing"
               element={
-                <ProtectedRoute>
+                <OwnerRoute>
                   <CreateListing />
-                </ProtectedRoute>
+                </OwnerRoute>
               }
             />
             <Route
               path="/edit-listing/:id"
               element={
-                <ProtectedRoute>
+                <OwnerRoute>
                   <CreateListing editMode={true} />
-                </ProtectedRoute>
+                </OwnerRoute>
               }
             />
             <Route
