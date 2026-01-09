@@ -1,6 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { CityProvider } from './contexts/CityContext';
 import Navbar from './components/Navbar';
+import CityGate from './components/CityGate';
 import Home from './pages/Home';
 import Browse from './pages/Browse';
 import ListingDetail from './pages/ListingDetail';
