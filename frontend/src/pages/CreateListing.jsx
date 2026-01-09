@@ -4,7 +4,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { useCity } from '../contexts/CityContext';
 import { createListing, updateListing, getListing, categories } from '../services/listingService';
 import ImageUploader from '../components/ImageUploader';
-import MapComponent from '../components/MapComponent';
 
 const amenitiesList = [
   'WiFi', 'AC', 'Parking', 'Power Backup', 'Security', 'CCTV',
@@ -15,7 +14,7 @@ const amenitiesList = [
 export default function CreateListing({ editMode = false }) {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { currentUser, userProfile } = useAuth();
+  const { currentUser, userProfile, isOwner } = useAuth();
   const { selectedCity } = useCity();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -25,25 +24,23 @@ export default function CreateListing({ editMode = false }) {
     description: '',
     category: '',
     price: '',
+    area: '', // locality/area
+    phone: userProfile?.phone || '',
     images: [],
-    location: {
-      address: '',
-      city: '',
-      lat: null,
-      lng: null
-    },
-    amenities: [],
-    contact: {
-      phone: userProfile?.phone || '',
-      email: currentUser?.email || ''
-    }
+    amenities: []
   });
 
   useEffect(() => {
+    // Redirect if not owner
+    if (userProfile && userProfile.role !== 'owner') {
+      navigate('/');
+      return;
+    }
+    
     if (editMode && id) {
       loadListing();
     }
-  }, [editMode, id]);
+  }, [editMode, id, userProfile]);
 
   const loadListing = async () => {
     try {
@@ -54,10 +51,10 @@ export default function CreateListing({ editMode = false }) {
           description: listing.description || '',
           category: listing.category || '',
           price: listing.price?.toString() || '',
+          area: listing.area || '',
+          phone: listing.contact?.phone || listing.phone || '',
           images: listing.images || [],
-          location: listing.location || { address: '', city: '', lat: null, lng: null },
-          amenities: listing.amenities || [],
-          contact: listing.contact || { phone: '', email: '' }
+          amenities: listing.amenities || []
         });
       } else {
         navigate('/dashboard');
@@ -70,15 +67,7 @@ export default function CreateListing({ editMode = false }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name.includes('.')) {
-      const [parent, child] = name.split('.');
-      setFormData(prev => ({
-        ...prev,
-        [parent]: { ...prev[parent], [child]: value }
-      }));
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
-    }
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleAmenityToggle = (amenity) => {
@@ -90,31 +79,40 @@ export default function CreateListing({ editMode = false }) {
     }));
   };
 
-  const handleLocationSelect = (coords) => {
-    setFormData(prev => ({
-      ...prev,
-      location: { ...prev.location, lat: coords.lat, lng: coords.lng }
-    }));
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    if (!formData.title || !formData.category || !formData.price) {
+    if (!formData.title || !formData.category || !formData.price || !formData.area) {
       setError('Please fill in all required fields');
+      return;
+    }
+
+    if (!formData.phone) {
+      setError('Please provide a phone number for contact');
       return;
     }
 
     setLoading(true);
     try {
       const listingData = {
-        ...formData,
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
         price: parseFloat(formData.price),
+        area: formData.area,
+        phone: formData.phone,
+        images: formData.images,
+        amenities: formData.amenities,
+        contact: {
+          phone: formData.phone,
+          email: currentUser?.email || ''
+        },
         ownerId: currentUser.uid,
-        ownerName: currentUser.displayName || 'Anonymous',
+        ownerName: currentUser.displayName || userProfile?.name || 'Anonymous',
         cityId: selectedCity?.id || '',
-        cityName: selectedCity?.name || ''
+        cityName: selectedCity?.name || '',
+        featured: false // Default to non-featured
       };
 
       if (editMode && id) {
@@ -131,30 +129,59 @@ export default function CreateListing({ editMode = false }) {
     setLoading(false);
   };
 
+  // Check if user is authenticated and is an owner
   if (!currentUser) {
     navigate('/login');
     return null;
   }
 
+  if (userProfile && userProfile.role !== 'owner') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl shadow-sm p-8 max-w-md w-full text-center">
+          <span className="text-5xl block mb-4">🔒</span>
+          <h2 className="text-xl font-bold text-gray-800 mb-2">Owner Access Only</h2>
+          <p className="text-gray-600 mb-6">Only property owners can post listings.</p>
+          <button
+            onClick={() => navigate('/')}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition"
+          >
+            Go to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8" data-testid="create-listing-page">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-xl shadow-sm p-6 md:p-8">
-          <h1 className="text-2xl font-bold text-gray-800 mb-6">
-            {editMode ? 'Edit Listing' : 'Create New Listing'}
+    <div className="min-h-screen bg-gray-50 py-6" data-testid="create-listing-page">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <h1 className="text-xl font-bold text-gray-800 mb-6">
+            {editMode ? 'Edit Listing' : 'Post New Listing'}
           </h1>
 
           {error && (
-            <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-lg" data-testid="error-message">
+            <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-lg text-sm" data-testid="error-message">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          {/* City Info */}
+          {selectedCity && (
+            <div className="mb-6 p-3 bg-blue-50 rounded-lg flex items-center">
+              <svg className="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              </svg>
+              <span className="text-sm text-blue-700">Posting in <strong>{selectedCity.name}</strong></span>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-5">
             {/* Category */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                 {categories.map((cat) => (
                   <button
                     key={cat.id}
@@ -167,7 +194,7 @@ export default function CreateListing({ editMode = false }) {
                     }`}
                     data-testid={`category-btn-${cat.id}`}
                   >
-                    <span className="text-xl block">{cat.icon}</span>
+                    <span className="text-lg block">{cat.icon}</span>
                     <span className="text-xs font-medium text-gray-700">{cat.name}</span>
                   </button>
                 ))}
@@ -189,23 +216,9 @@ export default function CreateListing({ editMode = false }) {
               />
             </div>
 
-            {/* Description */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                placeholder="Describe your property or vehicle..."
-                rows={4}
-                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                data-testid="description-input"
-              />
-            </div>
-
             {/* Price */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Price (per month) *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Rent (per month) *</label>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">₹</span>
                 <input
@@ -221,51 +234,64 @@ export default function CreateListing({ editMode = false }) {
               </div>
             </div>
 
-            {/* Images */}
+            {/* Area/Locality */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Images</label>
-              <ImageUploader
-                images={formData.images}
-                onImagesChange={(images) => setFormData(prev => ({ ...prev, images }))}
+              <label className="block text-sm font-medium text-gray-700 mb-2">Area / Locality *</label>
+              <input
+                type="text"
+                name="area"
+                value={formData.area}
+                onChange={handleChange}
+                placeholder="e.g., Koramangala, Indiranagar, Boring Road"
+                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+                data-testid="area-input"
               />
             </div>
 
-            {/* Location */}
-            <div className="space-y-4">
-              <label className="block text-sm font-medium text-gray-700">Location</label>
-              <input
-                type="text"
-                name="location.address"
-                value={formData.location.address}
+            {/* Description */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+              <textarea
+                name="description"
+                value={formData.description}
                 onChange={handleChange}
-                placeholder="Full address"
-                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                data-testid="address-input"
+                placeholder="Describe your property or vehicle..."
+                rows={4}
+                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                data-testid="description-input"
               />
-              <input
-                type="text"
-                name="location.city"
-                value={formData.location.city}
-                onChange={handleChange}
-                placeholder="City"
-                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                data-testid="city-input"
-              />
-              <div>
-                <p className="text-sm text-gray-500 mb-2">Click on the map to set location</p>
-                <MapComponent
-                  selectable={true}
-                  onLocationSelect={handleLocationSelect}
-                  center={formData.location.lat ? [formData.location.lat, formData.location.lng] : [20.5937, 78.9629]}
-                  zoom={formData.location.lat ? 15 : 5}
-                  markers={formData.location.lat ? [{ lat: formData.location.lat, lng: formData.location.lng }] : []}
+            </div>
+
+            {/* Phone Number */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Contact Phone *</label>
+              <div className="flex">
+                <span className="inline-flex items-center px-3 border border-r-0 border-gray-200 bg-gray-50 text-gray-500 rounded-l-lg">
+                  +91
+                </span>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value.replace(/\D/g, '').slice(0, 10) }))}
+                  placeholder="9876543210"
+                  className="flex-1 px-4 py-3 border border-gray-200 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                  data-testid="phone-input"
                 />
-                {formData.location.lat && (
-                  <p className="text-sm text-green-600 mt-2">
-                    ✓ Location selected: {formData.location.lat.toFixed(4)}, {formData.location.lng.toFixed(4)}
-                  </p>
-                )}
               </div>
+              <p className="text-xs text-gray-500 mt-1">This will be visible to users for contact</p>
+            </div>
+
+            {/* Images */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Photos</label>
+              <ImageUploader
+                images={formData.images}
+                onImagesChange={(images) => setFormData(prev => ({ ...prev, images }))}
+                maxImages={5}
+              />
             </div>
 
             {/* Amenities */}
@@ -290,34 +316,6 @@ export default function CreateListing({ editMode = false }) {
               </div>
             </div>
 
-            {/* Contact Info */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-                <input
-                  type="tel"
-                  name="contact.phone"
-                  value={formData.contact.phone}
-                  onChange={handleChange}
-                  placeholder="+91 98765 43210"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  data-testid="phone-input"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                <input
-                  type="email"
-                  name="contact.email"
-                  value={formData.contact.email}
-                  onChange={handleChange}
-                  placeholder="email@example.com"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  data-testid="email-input"
-                />
-              </div>
-            </div>
-
             {/* Submit */}
             <div className="flex gap-4 pt-4">
               <button
@@ -333,7 +331,7 @@ export default function CreateListing({ editMode = false }) {
                 className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50"
                 data-testid="submit-btn"
               >
-                {loading ? 'Saving...' : editMode ? 'Update Listing' : 'Create Listing'}
+                {loading ? 'Saving...' : editMode ? 'Update Listing' : 'Post Listing'}
               </button>
             </div>
           </form>
