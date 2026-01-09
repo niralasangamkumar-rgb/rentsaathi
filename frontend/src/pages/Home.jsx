@@ -48,7 +48,7 @@ export default function Home() {
       <section className="bg-gradient-to-br from-blue-600 to-blue-800 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14">
           <div className="text-center max-w-3xl mx-auto">
-            <h1 className="text-4xl md:text-5xl font-bold mb-6" data-testid="hero-title">
+            <h1 className="text-3xl md:text-4xl font-bold mb-4" data-testid="hero-title">
               Find Your Perfect
               <span className="text-blue-200"> Rental</span>
             </h1>
