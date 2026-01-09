@@ -20,9 +20,12 @@ export default function Favorites() {
     setLoading(true);
     try {
       const favIds = await getUserFavorites(currentUser.uid);
-      const listings = await Promise.all(
-        favIds.map(id => getListing(id))
-      );
+      
+      // Fetch all favorite listings
+      const listingPromises = favIds.map(id => getListing(id));
+      const listings = await Promise.all(listingPromises);
+      
+      // Filter out null results (deleted listings)
       setFavorites(listings.filter(Boolean));
     } catch (error) {
       console.error('Error loading favorites:', error);
@@ -39,7 +42,7 @@ export default function Favorites() {
   return (
     <div className="min-h-screen bg-gray-50" data-testid="favorites-page">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-2xl font-bold text-gray-800 mb-8">My Favorites</h1>
+        <h1 className="text-2xl font-bold text-gray-800 mb-6">Saved Listings</h1>
 
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -60,9 +63,9 @@ export default function Favorites() {
           </div>
         ) : (
           <div className="text-center py-16">
-            <div className="text-6xl mb-4">❤️</div>
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">No favorites yet</h3>
-            <p className="text-gray-500 mb-6">Start browsing and save listings you like</p>
+            <div className="text-5xl mb-4">❤️</div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">No saved listings</h3>
+            <p className="text-gray-500 mb-6 text-sm">Start browsing and save listings you like</p>
             <Link
               to="/browse"
               className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition"
