@@ -1,9 +1,15 @@
 import { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useCity } from '../contexts/CityContext';
 
 export default function CityGate({ children }) {
   const { selectedCity, cities, loading, selectCity } = useCity();
   const [searchTerm, setSearchTerm] = useState('');
+  const location = useLocation();
+  
+  // Allow auth pages without city selection
+  const authPages = ['/login', '/register', '/complete-profile'];
+  const isAuthPage = authPages.some(page => location.pathname.startsWith(page));
 
   const filteredCities = cities.filter(city =>
     city.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
