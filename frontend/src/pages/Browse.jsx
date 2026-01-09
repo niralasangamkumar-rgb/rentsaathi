@@ -5,11 +5,13 @@ import CategoryFilter from '../components/CategoryFilter';
 import SearchBar from '../components/SearchBar';
 import { getListings } from '../services/listingService';
 import { useAuth } from '../contexts/AuthContext';
+import { useCity } from '../contexts/CityContext';
 import { getUserFavorites } from '../services/favoriteService';
 
 export default function Browse() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { currentUser } = useAuth();
+  const { selectedCity } = useCity();
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [favorites, setFavorites] = useState([]);
@@ -24,12 +26,13 @@ export default function Browse() {
     if (currentUser) {
       loadFavorites();
     }
-  }, [selectedCategory, currentUser]);
+  }, [selectedCategory, currentUser, selectedCity]);
 
   const loadListings = async (reset = false) => {
     setLoading(true);
     try {
       const filters = {};
+      if (selectedCity) filters.cityId = selectedCity.id;
       if (selectedCategory) filters.category = selectedCategory;
       if (priceRange.min) filters.minPrice = parseInt(priceRange.min);
       if (priceRange.max) filters.maxPrice = parseInt(priceRange.max);
