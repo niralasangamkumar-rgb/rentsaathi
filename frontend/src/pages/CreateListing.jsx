@@ -16,6 +16,7 @@ export default function CreateListing({ editMode = false }) {
   const { id } = useParams();
   const navigate = useNavigate();
   const { currentUser, userProfile } = useAuth();
+  const { selectedCity } = useCity();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
