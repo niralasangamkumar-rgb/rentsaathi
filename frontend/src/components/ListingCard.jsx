@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { addFavorite, removeFavorite } from '../services/favoriteService';
 
-export default function ListingCard({ listing, isFavorited = false, onFavoriteToggle }) {
+export default function ListingCard({ listing, isFavorited = false, onFavoriteToggle, featured = false }) {
   const { currentUser } = useAuth();
   const [favorited, setFavorited] = useState(isFavorited);
   const [loading, setLoading] = useState(false);
@@ -45,7 +45,9 @@ export default function ListingCard({ listing, isFavorited = false, onFavoriteTo
 
   return (
     <Link to={`/listing/${listing.id}`} data-testid={`listing-card-${listing.id}`}>
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-200">
+      <div className={`bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition-shadow duration-200 ${
+        featured ? 'border-amber-200 ring-1 ring-amber-100' : 'border-gray-100'
+      }`}>
         {/* Image */}
         <div className="relative aspect-[4/3] bg-gray-100">
           {listing.images && listing.images.length > 0 ? (
@@ -56,15 +58,24 @@ export default function ListingCard({ listing, isFavorited = false, onFavoriteTo
               loading="lazy"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-4xl">
+            <div className="w-full h-full flex items-center justify-center text-4xl bg-gray-50">
               {getCategoryIcon(listing.category)}
             </div>
           )}
           
+          {/* Featured Badge */}
+          {featured && (
+            <span className="absolute top-3 left-3 px-2 py-1 bg-amber-500 text-white text-xs font-medium rounded-full flex items-center">
+              ⭐ Featured
+            </span>
+          )}
+          
           {/* Category Badge */}
-          <span className="absolute top-3 left-3 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-medium text-gray-700">
-            {getCategoryIcon(listing.category)} {listing.category?.charAt(0).toUpperCase() + listing.category?.slice(1)}
-          </span>
+          {!featured && (
+            <span className="absolute top-3 left-3 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-medium text-gray-700">
+              {getCategoryIcon(listing.category)} {listing.category?.charAt(0).toUpperCase() + listing.category?.slice(1)}
+            </span>
+          )}
 
           {/* Favorite Button */}
           {currentUser && (
@@ -90,13 +101,17 @@ export default function ListingCard({ listing, isFavorited = false, onFavoriteTo
         {/* Content */}
         <div className="p-4">
           <h3 className="font-semibold text-gray-800 truncate" data-testid="listing-title">{listing.title}</h3>
+          
+          {/* Area/Location */}
           <p className="text-sm text-gray-500 mt-1 flex items-center">
-            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
-            {listing.location?.address || 'Location not specified'}
+            <span className="truncate">{listing.area || listing.location?.address || 'Location not specified'}</span>
           </p>
+          
+          {/* Price */}
           <div className="flex items-center justify-between mt-3">
             <span className="text-lg font-bold text-blue-600" data-testid="listing-price">
               ₹{listing.price?.toLocaleString()}
