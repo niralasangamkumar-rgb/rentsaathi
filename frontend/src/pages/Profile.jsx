@@ -1,12 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '../config/firebase';
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { currentUser, userProfile, fetchUserProfile, logout } = useAuth();
+  const { currentUser, userProfile, updateUserProfile, logout } = useAuth();
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -22,11 +20,10 @@ export default function Profile() {
     e.preventDefault();
     setLoading(true);
     try {
-      await updateDoc(doc(db, 'users', currentUser.uid), {
+      await updateUserProfile({
         name: formData.name,
         phone: formData.phone
       });
-      await fetchUserProfile(currentUser.uid);
       setEditing(false);
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -46,28 +43,31 @@ export default function Profile() {
   return (
     <div className="min-h-screen bg-gray-50" data-testid="profile-page">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-2xl font-bold text-gray-800 mb-8">My Profile</h1>
+        <h1 className="text-2xl font-bold text-gray-800 mb-6">My Profile</h1>
 
         <div className="bg-white rounded-xl shadow-sm">
           {/* Profile Header */}
           <div className="p-6 border-b border-gray-100">
             <div className="flex items-center">
-              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center">
-                <span className="text-3xl text-blue-600 font-bold">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                <span className="text-2xl text-blue-600 font-bold">
                   {(userProfile?.name || currentUser?.displayName || currentUser?.email)?.charAt(0).toUpperCase()}
                 </span>
               </div>
-              <div className="ml-6">
-                <h2 className="text-xl font-semibold text-gray-800" data-testid="profile-name">
+              <div className="ml-4">
+                <h2 className="text-lg font-semibold text-gray-800" data-testid="profile-name">
                   {userProfile?.name || currentUser?.displayName || 'User'}
                 </h2>
-                <p className="text-gray-500">{currentUser?.email}</p>
+                <p className="text-gray-500 text-sm">{currentUser?.email || userProfile?.phone}</p>
+                <span className="inline-block mt-1 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
+                  {userProfile?.role === 'owner' ? '🏠 Owner' : '👤 Renter'}
+                </span>
               </div>
             </div>
           </div>
 
           {/* Profile Form */}
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          <form onSubmit={handleSubmit} className="p-6 space-y-5">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
               {editing ? (
@@ -89,7 +89,7 @@ export default function Profile() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
               <p className="px-4 py-3 bg-gray-50 rounded-lg text-gray-800">
-                {currentUser?.email}
+                {currentUser?.email || 'Not set'}
               </p>
             </div>
 
@@ -109,6 +109,13 @@ export default function Profile() {
                   {userProfile?.phone || 'Not set'}
                 </p>
               )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Account Type</label>
+              <p className="px-4 py-3 bg-gray-50 rounded-lg text-gray-800">
+                {userProfile?.role === 'owner' ? '🏠 Property Owner' : '👤 Renter'}
+              </p>
             </div>
 
             <div>
