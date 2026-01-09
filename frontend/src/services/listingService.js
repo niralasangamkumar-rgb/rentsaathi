@@ -85,6 +85,10 @@ export async function getListings(filters = {}, lastDoc = null, pageSize = 12) {
   let q = collection(db, LISTINGS_COLLECTION);
   const constraints = [];
 
+  if (filters.cityId) {
+    constraints.push(where('cityId', '==', filters.cityId));
+  }
+
   if (filters.category) {
     constraints.push(where('category', '==', filters.category));
   }
