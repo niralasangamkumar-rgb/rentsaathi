@@ -82,7 +82,9 @@ function AppContent() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <CityProvider>
+        <AppContent />
+      </CityProvider>
     </AuthProvider>
   );
 }
