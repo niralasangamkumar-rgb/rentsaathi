@@ -5,10 +5,12 @@ import CategoryFilter from '../components/CategoryFilter';
 import SearchBar from '../components/SearchBar';
 import { getListings, categories } from '../services/listingService';
 import { useAuth } from '../contexts/AuthContext';
+import { useCity } from '../contexts/CityContext';
 import { getUserFavorites } from '../services/favoriteService';
 
 export default function Home() {
   const { currentUser } = useAuth();
+  const { selectedCity } = useCity();
   const [featuredListings, setFeaturedListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -19,12 +21,14 @@ export default function Home() {
     if (currentUser) {
       loadFavorites();
     }
-  }, [selectedCategory, currentUser]);
+  }, [selectedCategory, currentUser, selectedCity]);
 
   const loadListings = async () => {
     setLoading(true);
     try {
-      const filters = selectedCategory ? { category: selectedCategory } : {};
+      const filters = {};
+      if (selectedCategory) filters.category = selectedCategory;
+      if (selectedCity) filters.cityId = selectedCity.id;
       const { listings } = await getListings(filters, null, 8);
       setFeaturedListings(listings);
     } catch (error) {
