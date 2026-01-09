@@ -52,7 +52,7 @@ export default function Home() {
               Find Your Perfect
               <span className="text-blue-200"> Rental</span>
             </h1>
-            <p className="text-lg md:text-xl text-blue-100 mb-8">
+            <p className="text-base md:text-lg text-blue-100 mb-6">
               Discover hostels, PGs, rooms, flats, commercial spaces, and vehicle rentals all in one place.
             </p>
             
