@@ -112,7 +112,9 @@ export default function CreateListing({ editMode = false }) {
         ...formData,
         price: parseFloat(formData.price),
         ownerId: currentUser.uid,
-        ownerName: currentUser.displayName || 'Anonymous'
+        ownerName: currentUser.displayName || 'Anonymous',
+        cityId: selectedCity?.id || '',
+        cityName: selectedCity?.name || ''
       };
 
       if (editMode && id) {
