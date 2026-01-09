@@ -1,51 +1,56 @@
-import { 
-  collection, 
-  doc, 
-  addDoc, 
-  deleteDoc, 
-  getDocs, 
-  query, 
-  where 
-} from 'firebase/firestore';
+import { doc, updateDoc, arrayUnion, arrayRemove, getDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
-const FAVORITES_COLLECTION = 'favorites';
-
+// Add listing to user's saved listings
 export async function addFavorite(userId, listingId) {
-  await addDoc(collection(db, FAVORITES_COLLECTION), {
-    userId,
-    listingId,
-    createdAt: new Date().toISOString()
-  });
+  try {
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, {
+      savedListings: arrayUnion(listingId)
+    });
+    return { success: true };
+  } catch (error) {
+    console.error('Error adding favorite:', error);
+    return { success: false, error: error.message };
+  }
 }
 
+// Remove listing from user's saved listings
 export async function removeFavorite(userId, listingId) {
-  const q = query(
-    collection(db, FAVORITES_COLLECTION),
-    where('userId', '==', userId),
-    where('listingId', '==', listingId)
-  );
-  const snapshot = await getDocs(q);
-  snapshot.forEach(async (docSnap) => {
-    await deleteDoc(doc(db, FAVORITES_COLLECTION, docSnap.id));
-  });
+  try {
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, {
+      savedListings: arrayRemove(listingId)
+    });
+    return { success: true };
+  } catch (error) {
+    console.error('Error removing favorite:', error);
+    return { success: false, error: error.message };
+  }
 }
 
+// Get user's saved listings IDs
 export async function getUserFavorites(userId) {
-  const q = query(
-    collection(db, FAVORITES_COLLECTION),
-    where('userId', '==', userId)
-  );
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => doc.data().listingId);
+  try {
+    const userRef = doc(db, 'users', userId);
+    const userSnap = await getDoc(userRef);
+    if (userSnap.exists()) {
+      return userSnap.data().savedListings || [];
+    }
+    return [];
+  } catch (error) {
+    console.error('Error getting favorites:', error);
+    return [];
+  }
 }
 
+// Check if a listing is in user's favorites
 export async function isFavorite(userId, listingId) {
-  const q = query(
-    collection(db, FAVORITES_COLLECTION),
-    where('userId', '==', userId),
-    where('listingId', '==', listingId)
-  );
-  const snapshot = await getDocs(q);
-  return !snapshot.empty;
+  try {
+    const favorites = await getUserFavorites(userId);
+    return favorites.includes(listingId);
+  } catch (error) {
+    console.error('Error checking favorite:', error);
+    return false;
+  }
 }
