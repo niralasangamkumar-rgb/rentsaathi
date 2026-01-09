@@ -53,6 +53,7 @@ export async function deleteImages(urls) {
 export async function createListing(listingData) {
   const docRef = await addDoc(collection(db, LISTINGS_COLLECTION), {
     ...listingData,
+    featured: false, // Default to non-featured
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   });
@@ -81,8 +82,35 @@ export async function getListing(listingId) {
   return null;
 }
 
-export async function getListings(filters = {}, lastDoc = null, pageSize = 12) {
-  let q = collection(db, LISTINGS_COLLECTION);
+// Get featured listings
+export async function getFeaturedListings(cityId = null, pageSize = 8) {
+  let q;
+  const constraints = [
+    where('featured', '==', true),
+    orderBy('createdAt', 'desc'),
+    limit(pageSize)
+  ];
+  
+  if (cityId) {
+    constraints.unshift(where('cityId', '==', cityId));
+  }
+  
+  q = query(collection(db, LISTINGS_COLLECTION), ...constraints);
+  
+  try {
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    console.error('Error fetching featured listings:', error);
+    return [];
+  }
+}
+
+// Get regular (non-featured) listings
+export async function getRegularListings(filters = {}, lastDoc = null, pageSize = 12) {
   const constraints = [];
 
   if (filters.cityId) {
@@ -93,16 +121,11 @@ export async function getListings(filters = {}, lastDoc = null, pageSize = 12) {
     constraints.push(where('category', '==', filters.category));
   }
 
-  if (filters.minPrice) {
-    constraints.push(where('price', '>=', filters.minPrice));
-  }
-
-  if (filters.maxPrice) {
-    constraints.push(where('price', '<=', filters.maxPrice));
-  }
-
-  if (filters.ownerId) {
-    constraints.push(where('ownerId', '==', filters.ownerId));
+  // Note: Firestore requires composite indexes for multiple range queries
+  // For simplicity, we'll filter price client-side if needed
+  
+  if (filters.area) {
+    constraints.push(where('area', '==', filters.area));
   }
 
   constraints.push(orderBy('createdAt', 'desc'));
@@ -112,18 +135,37 @@ export async function getListings(filters = {}, lastDoc = null, pageSize = 12) {
     constraints.push(startAfter(lastDoc));
   }
 
-  q = query(q, ...constraints);
-  const snapshot = await getDocs(q);
+  const q = query(collection(db, LISTINGS_COLLECTION), ...constraints);
   
-  const listings = snapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data()
-  }));
+  try {
+    const snapshot = await getDocs(q);
+    
+    let listings = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
 
-  return {
-    listings,
-    lastDoc: snapshot.docs[snapshot.docs.length - 1] || null
-  };
+    // Client-side price filtering (to avoid complex composite indexes)
+    if (filters.minPrice) {
+      listings = listings.filter(l => l.price >= filters.minPrice);
+    }
+    if (filters.maxPrice) {
+      listings = listings.filter(l => l.price <= filters.maxPrice);
+    }
+
+    return {
+      listings,
+      lastDoc: snapshot.docs[snapshot.docs.length - 1] || null
+    };
+  } catch (error) {
+    console.error('Error fetching listings:', error);
+    return { listings: [], lastDoc: null };
+  }
+}
+
+// Legacy function for compatibility
+export async function getListings(filters = {}, lastDoc = null, pageSize = 12) {
+  return getRegularListings(filters, lastDoc, pageSize);
 }
 
 export async function getUserListings(userId) {
@@ -132,6 +174,33 @@ export async function getUserListings(userId) {
     where('ownerId', '==', userId),
     orderBy('createdAt', 'desc')
   );
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  try {
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  } catch (error) {
+    console.error('Error fetching user listings:', error);
+    return [];
+  }
+}
+
+// Get unique areas/localities from listings
+export async function getAreas(cityId = null) {
+  try {
+    let q = collection(db, LISTINGS_COLLECTION);
+    if (cityId) {
+      q = query(q, where('cityId', '==', cityId));
+    }
+    const snapshot = await getDocs(q);
+    const areas = new Set();
+    snapshot.docs.forEach(doc => {
+      const data = doc.data();
+      if (data.area) {
+        areas.add(data.area);
+      }
+    });
+    return Array.from(areas).sort();
+  } catch (error) {
+    console.error('Error fetching areas:', error);
+    return [];
+  }
 }
