@@ -17,6 +17,7 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [favorites, setFavorites] = useState([]);
   const [displayCity, setDisplayCity] = useState('Mumbai');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     loadListings();
@@ -80,7 +81,11 @@ export default function Home() {
             
             {/* Search Bar */}
             <div className="max-w-2xl mx-auto">
-              <SearchBar onSearch={handleCitySearch} />
+              <SearchBar 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onSearch={handleCitySearch} 
+              />
             </div>
 
             {/* Selected City Badge */}

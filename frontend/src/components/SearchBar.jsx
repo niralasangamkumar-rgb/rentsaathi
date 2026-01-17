@@ -1,22 +1,39 @@
 import { useState } from 'react';
 
-export default function SearchBar({ onSearch }) {
+export default function SearchBar({ onSearch, value, onChange }) {
   const [searchTerm, setSearchTerm] = useState('');
+
+  const handleChange = (e) => {
+    const newValue = e.target.value;
+    if (onChange) {
+      onChange(e);
+    } else {
+      setSearchTerm(newValue);
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSearch(searchTerm);
+    const searchValue = value !== undefined ? value : searchTerm;
+    onSearch(searchValue);
   };
+
+  const displayValue = value !== undefined ? value : searchTerm;
 
   return (
     <form onSubmit={handleSubmit} className="w-full" data-testid="search-form">
       <div className="relative">
         <input
           type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          value={displayValue}
+          onChange={handleChange}
           placeholder="Search by location, property type..."
-          className="w-full px-4 py-3 pl-12 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+          className="w-full px-4 py-3 pl-12 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-black"
+          style={{
+            color: '#000000',
+            backgroundColor: '#ffffff',
+            caretColor: '#000000'
+          }}
           data-testid="search-input"
         />
         <svg
