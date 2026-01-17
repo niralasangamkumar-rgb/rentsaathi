@@ -56,13 +56,13 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50" data-testid="home-page">
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-blue-600 to-blue-800 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 sm:py-4">
           <div className="text-center max-w-3xl mx-auto">
-            <h1 className="text-3xl md:text-4xl font-bold mb-4" data-testid="hero-title">
+            <h1 className="text-3xl md:text-4xl font-bold mb-1" data-testid="hero-title">
               Find Your Perfect
               <span className="text-blue-200"> Rental</span>
             </h1>
-            <p className="text-base md:text-lg text-blue-100 mb-6">
+            <p className="text-base md:text-lg text-blue-100 mb-3">
               Discover hostels, PGs, rooms, flats, commercial spaces, and vehicle rentals all in one place.
             </p>
             
@@ -83,7 +83,7 @@ export default function Home() {
 
       {/* Featured Listings */}
       {featuredListings.length > 0 && (
-        <section className="py-8 bg-gradient-to-b from-amber-50 to-white">
+        <section className="py-6 bg-gradient-to-b from-amber-50 to-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center space-x-2">

@@ -18,6 +18,10 @@ export default function Browse() {
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
   const [selectedArea, setSelectedArea] = useState('');
   const [areas, setAreas] = useState([]);
+  const [selectedPropertyType, setSelectedPropertyType] = useState('');
+  const [selectedTenantPref, setSelectedTenantPref] = useState('');
+  const [selectedFurnishing, setSelectedFurnishing] = useState('');
+  const [selectedAvailability, setSelectedAvailability] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [lastDoc, setLastDoc] = useState(null);
   const [hasMore, setHasMore] = useState(true);
@@ -39,6 +43,10 @@ export default function Browse() {
       if (priceRange.min) filters.minPrice = parseInt(priceRange.min);
       if (priceRange.max) filters.maxPrice = parseInt(priceRange.max);
       if (selectedArea) filters.area = selectedArea;
+      if (selectedPropertyType) filters.propertyType = selectedPropertyType;
+      if (selectedTenantPref) filters.tenantPreference = selectedTenantPref;
+      if (selectedFurnishing) filters.furnishingStatus = selectedFurnishing;
+      if (selectedAvailability) filters.availability = selectedAvailability;
 
       const { listings: newListings, lastDoc: newLastDoc } = await getRegularListings(
         filters,
@@ -95,6 +103,10 @@ export default function Browse() {
   const handleClearFilters = () => {
     setPriceRange({ min: '', max: '' });
     setSelectedArea('');
+    setSelectedPropertyType('');
+    setSelectedTenantPref('');
+    setSelectedFurnishing('');
+    setSelectedAvailability('');
     setSelectedCategory(null);
     setSearchParams({});
     loadListings(true);
@@ -102,7 +114,46 @@ export default function Browse() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50" data-testid="browse-page">
+    <>
+      <style>{`
+        input[type='range'] {
+          -webkit-appearance: none;
+          appearance: none;
+        }
+        
+        input[type='range']::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: #2563eb;
+          cursor: pointer;
+          border: 2px solid white;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        input[type='range']::-moz-range-thumb {
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: #2563eb;
+          cursor: pointer;
+          border: 2px solid white;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        input[type='range']::-webkit-slider-thumb:hover {
+          background: #1d4ed8;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        input[type='range']::-moz-range-thumb:hover {
+          background: #1d4ed8;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+      `}</style>
+      <div className="min-h-screen bg-gray-50" data-testid="browse-page">
       {/* Header */}
       <div className="bg-white border-b border-gray-100 sticky top-16 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -121,7 +172,7 @@ export default function Browse() {
             
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center justify-center space-x-2 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+              className="flex items-center justify-center space-x-2 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition pointer-events-auto z-50"
               data-testid="filter-btn"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -141,37 +192,75 @@ export default function Browse() {
         </div>
       </div>
 
-      {/* Filters Panel */}
+      {/* Filters Panel - Desktop */}
       {showFilters && (
-        <div className="bg-white border-b border-gray-100 shadow-sm" data-testid="filters-panel">
+        <div className="hidden lg:block bg-white border-b border-gray-100 shadow-sm sticky top-32 z-40" data-testid="filters-panel-desktop">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Price Range */}
-              <div>
+            {/* Filters Grid - Desktop: 3 cols */}
+            <div className="grid lg:grid-cols-3 gap-4 mb-6">
+              {/* Price Range Slider */}
+              <div className="flex flex-col">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Price Range</label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    placeholder="Min"
-                    value={priceRange.min}
-                    onChange={(e) => setPriceRange({ ...priceRange, min: e.target.value })}
-                    className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                    data-testid="min-price-input"
-                  />
-                  <span className="text-gray-400">to</span>
-                  <input
-                    type="number"
-                    placeholder="Max"
-                    value={priceRange.max}
-                    onChange={(e) => setPriceRange({ ...priceRange, max: e.target.value })}
-                    className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                    data-testid="max-price-input"
-                  />
+                <div className="mb-3">
+                  <div className="text-sm text-gray-600 mb-3">
+                    ₹{priceRange.min || 0} – ₹{priceRange.max || 100000}
+                  </div>
+                  
+                  {/* Slider Container */}
+                  <div className="relative h-8 flex items-center">
+                    {/* Track Background */}
+                    <div className="absolute w-full h-1 bg-gray-200 rounded-lg" />
+                    
+                    {/* Track Fill */}
+                    <div 
+                      className="absolute h-1 bg-blue-600 rounded-lg"
+                      style={{
+                        left: `${((priceRange.min || 0) / 100000) * 100}%`,
+                        right: `${100 - ((priceRange.max || 100000) / 100000) * 100}%`
+                      }}
+                    />
+                    
+                    {/* Min Range Input */}
+                    <input
+                      type="range"
+                      min="0"
+                      max="100000"
+                      step="500"
+                      value={priceRange.min || 0}
+                      onChange={(e) => {
+                        const newMin = Math.min(parseInt(e.target.value), parseInt(priceRange.max || 100000));
+                        setPriceRange({ ...priceRange, min: newMin });
+                      }}
+                      className="absolute w-full h-1 bg-transparent rounded-lg appearance-none cursor-pointer pointer-events-auto"
+                      style={{
+                        zIndex: (priceRange.min || 0) > 50000 ? 5 : 3,
+                      }}
+                      data-testid="min-price-input"
+                    />
+                    
+                    {/* Max Range Input */}
+                    <input
+                      type="range"
+                      min="0"
+                      max="100000"
+                      step="500"
+                      value={priceRange.max || 100000}
+                      onChange={(e) => {
+                        const newMax = Math.max(parseInt(e.target.value), parseInt(priceRange.min || 0));
+                        setPriceRange({ ...priceRange, max: newMax });
+                      }}
+                      className="absolute w-full h-1 bg-transparent rounded-lg appearance-none cursor-pointer pointer-events-auto"
+                      style={{
+                        zIndex: (priceRange.max || 100000) < 50000 ? 3 : 5,
+                      }}
+                      data-testid="max-price-input"
+                    />
+                  </div>
                 </div>
               </div>
 
               {/* Area Filter */}
-              <div>
+              <div className="flex flex-col">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Area / Locality</label>
                 <select
                   value={selectedArea}
@@ -186,23 +275,279 @@ export default function Browse() {
                 </select>
               </div>
 
-              {/* Filter Actions */}
-              <div className="flex items-end gap-2">
-                <button
-                  onClick={handleApplyFilters}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition text-sm"
-                  data-testid="apply-filters-btn"
+              {/* Property Type Filter */}
+              <div className="flex flex-col">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Property Type</label>
+                <select
+                  value={selectedPropertyType}
+                  onChange={(e) => setSelectedPropertyType(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  data-testid="property-type-filter"
                 >
-                  Apply Filters
-                </button>
-                <button
-                  onClick={handleClearFilters}
-                  className="px-4 py-2 border border-gray-200 rounded-lg font-medium hover:bg-gray-50 transition text-sm"
-                  data-testid="clear-filters-btn"
-                >
-                  Clear
-                </button>
+                  <option value="">All Types</option>
+                  <option value="room">Room</option>
+                  <option value="pg_hostel">PG/Hostel</option>
+                  <option value="flat">Flat</option>
+                  <option value="commercial">Commercial</option>
+                  <option value="bike_rent">Bike Rent</option>
+                  <option value="car_rent">Car Rent</option>
+                </select>
               </div>
+
+              {/* Tenant Preference Filter */}
+              <div className="flex flex-col">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Tenant Preference</label>
+                <select
+                  value={selectedTenantPref}
+                  onChange={(e) => setSelectedTenantPref(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  data-testid="tenant-pref-filter"
+                >
+                  <option value="">Any</option>
+                  <option value="boys">Boys</option>
+                  <option value="girls">Girls</option>
+                </select>
+              </div>
+
+              {/* Furnishing Status Filter */}
+              <div className="flex flex-col">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Furnishing</label>
+                <select
+                  value={selectedFurnishing}
+                  onChange={(e) => setSelectedFurnishing(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  data-testid="furnishing-filter"
+                >
+                  <option value="">All</option>
+                  <option value="fully_furnished">Fully Furnished</option>
+                  <option value="semi_furnished">Semi Furnished</option>
+                  <option value="unfurnished">Unfurnished</option>
+                </select>
+              </div>
+
+              {/* Availability Filter */}
+              <div className="flex flex-col">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Availability</label>
+                <select
+                  value={selectedAvailability}
+                  onChange={(e) => setSelectedAvailability(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  data-testid="availability-filter"
+                >
+                  <option value="">Any</option>
+                  <option value="available">Available Now</option>
+                  <option value="soon">Coming Soon</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Filter Actions */}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={handleApplyFilters}
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition text-sm"
+                data-testid="apply-filters-btn"
+              >
+                Apply Filters
+              </button>
+              <button
+                onClick={handleClearFilters}
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg font-medium hover:bg-gray-50 transition text-sm"
+                data-testid="clear-filters-btn"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Filter Drawer Backdrop */}
+      {showFilters && (
+        <div 
+          className="lg:hidden fixed inset-0 bg-black bg-opacity-40 z-40 top-16"
+          onClick={() => setShowFilters(false)}
+          data-testid="filter-backdrop"
+        />
+      )}
+
+      {/* Filters Panel - Mobile */}
+      {showFilters && (
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white rounded-t-lg shadow-lg z-50 max-h-[85vh] overflow-y-auto" data-testid="filters-panel-mobile">
+          <div className="px-4 sm:px-6 py-6">
+            {/* Mobile Filter Header */}
+            <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
+              <h2 className="text-lg font-semibold text-gray-800">Filters</h2>
+              <button
+                onClick={() => setShowFilters(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl leading-none"
+                aria-label="Close filters"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Filters Grid - Mobile: 1 col */}
+            <div className="grid grid-cols-1 gap-4 mb-6">
+              {/* Price Range Slider */}
+              <div className="flex flex-col">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Price Range</label>
+                <div className="mb-3">
+                  <div className="text-sm text-gray-600 mb-3">
+                    ₹{priceRange.min || 0} – ₹{priceRange.max || 100000}
+                  </div>
+                  
+                  {/* Slider Container */}
+                  <div className="relative h-8 flex items-center">
+                    {/* Track Background */}
+                    <div className="absolute w-full h-1 bg-gray-200 rounded-lg" />
+                    
+                    {/* Track Fill */}
+                    <div 
+                      className="absolute h-1 bg-blue-600 rounded-lg"
+                      style={{
+                        left: `${((priceRange.min || 0) / 100000) * 100}%`,
+                        right: `${100 - ((priceRange.max || 100000) / 100000) * 100}%`
+                      }}
+                    />
+                    
+                    {/* Min Range Input */}
+                    <input
+                      type="range"
+                      min="0"
+                      max="100000"
+                      step="500"
+                      value={priceRange.min || 0}
+                      onChange={(e) => {
+                        const newMin = Math.min(parseInt(e.target.value), parseInt(priceRange.max || 100000));
+                        setPriceRange({ ...priceRange, min: newMin });
+                      }}
+                      className="absolute w-full h-1 bg-transparent rounded-lg appearance-none cursor-pointer pointer-events-auto"
+                      style={{
+                        zIndex: (priceRange.min || 0) > 50000 ? 5 : 3,
+                      }}
+                      data-testid="min-price-input"
+                    />
+                    
+                    {/* Max Range Input */}
+                    <input
+                      type="range"
+                      min="0"
+                      max="100000"
+                      step="500"
+                      value={priceRange.max || 100000}
+                      onChange={(e) => {
+                        const newMax = Math.max(parseInt(e.target.value), parseInt(priceRange.min || 0));
+                        setPriceRange({ ...priceRange, max: newMax });
+                      }}
+                      className="absolute w-full h-1 bg-transparent rounded-lg appearance-none cursor-pointer pointer-events-auto"
+                      style={{
+                        zIndex: (priceRange.max || 100000) < 50000 ? 3 : 5,
+                      }}
+                      data-testid="max-price-input"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Area Filter */}
+              <div className="flex flex-col">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Area / Locality</label>
+                <select
+                  value={selectedArea}
+                  onChange={(e) => setSelectedArea(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  data-testid="area-filter"
+                >
+                  <option value="">All Areas</option>
+                  {areas.map((area) => (
+                    <option key={area} value={area}>{area}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Property Type Filter */}
+              <div className="flex flex-col">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Property Type</label>
+                <select
+                  value={selectedPropertyType}
+                  onChange={(e) => setSelectedPropertyType(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  data-testid="property-type-filter"
+                >
+                  <option value="">All Types</option>
+                  <option value="room">Room</option>
+                  <option value="pg_hostel">PG/Hostel</option>
+                  <option value="flat">Flat</option>
+                  <option value="commercial">Commercial</option>
+                  <option value="bike_rent">Bike Rent</option>
+                  <option value="car_rent">Car Rent</option>
+                </select>
+              </div>
+
+              {/* Tenant Preference Filter */}
+              <div className="flex flex-col">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Tenant Preference</label>
+                <select
+                  value={selectedTenantPref}
+                  onChange={(e) => setSelectedTenantPref(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  data-testid="tenant-pref-filter"
+                >
+                  <option value="">Any</option>
+                  <option value="boys">Boys</option>
+                  <option value="girls">Girls</option>
+                </select>
+              </div>
+
+              {/* Furnishing Status Filter */}
+              <div className="flex flex-col">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Furnishing</label>
+                <select
+                  value={selectedFurnishing}
+                  onChange={(e) => setSelectedFurnishing(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  data-testid="furnishing-filter"
+                >
+                  <option value="">All</option>
+                  <option value="fully_furnished">Fully Furnished</option>
+                  <option value="semi_furnished">Semi Furnished</option>
+                  <option value="unfurnished">Unfurnished</option>
+                </select>
+              </div>
+
+              {/* Availability Filter */}
+              <div className="flex flex-col">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Availability</label>
+                <select
+                  value={selectedAvailability}
+                  onChange={(e) => setSelectedAvailability(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  data-testid="availability-filter"
+                >
+                  <option value="">Any</option>
+                  <option value="available">Available Now</option>
+                  <option value="soon">Coming Soon</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Filter Actions */}
+            <div className="grid grid-cols-1 gap-2 pt-4 border-t border-gray-100">
+              <button
+                onClick={handleApplyFilters}
+                className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition text-sm"
+                data-testid="apply-filters-btn"
+              >
+                Apply Filters
+              </button>
+              <button
+                onClick={handleClearFilters}
+                className="w-full px-4 py-3 border border-gray-200 rounded-lg font-medium hover:bg-gray-50 transition text-sm"
+                data-testid="clear-filters-btn"
+              >
+                Clear Filters
+              </button>
             </div>
           </div>
         </div>
@@ -227,15 +572,20 @@ export default function Browse() {
             ))}
           </div>
         ) : listings.length > 0 ? (
-          <>
+          <div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {listings.map((listing) => (
-                <ListingCard
-                  key={listing.id}
-                  listing={listing}
-                  isFavorited={favorites.includes(listing.id)}
-                />
-              ))}
+              {listings
+                .filter((listing) => {
+                  if (!selectedCategory) return true;
+                  return listing.category === selectedCategory;
+                })
+                .map((listing) => (
+                  <ListingCard
+                    key={listing.id}
+                    listing={listing}
+                    isFavorited={favorites.includes(listing.id)}
+                  />
+                ))}
             </div>
 
             {/* Load More */}
@@ -251,7 +601,7 @@ export default function Browse() {
                 </button>
               </div>
             )}
-          </>
+          </div>
         ) : (
           <div className="text-center py-16">
             <div className="text-5xl mb-4">🔍</div>
@@ -260,6 +610,7 @@ export default function Browse() {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 }
