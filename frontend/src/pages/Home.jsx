@@ -16,6 +16,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [favorites, setFavorites] = useState([]);
+  const [displayCity, setDisplayCity] = useState('Mumbai');
 
   useEffect(() => {
     loadListings();
@@ -52,6 +53,17 @@ export default function Home() {
     }
   };
 
+  const handleCitySearch = (term) => {
+    if (term.trim()) {
+      const capitalizedCity = term
+        .trim()
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+      setDisplayCity(capitalizedCity);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50" data-testid="home-page">
       {/* Hero Section */}
@@ -68,15 +80,13 @@ export default function Home() {
             
             {/* Search Bar */}
             <div className="max-w-2xl mx-auto">
-              <SearchBar onSearch={(term) => console.log('Search:', term)} />
+              <SearchBar onSearch={handleCitySearch} />
             </div>
 
             {/* Selected City Badge */}
-            {selectedCity && (
-              <p className="mt-4 text-blue-200 text-sm">
-                📍 Showing listings in <span className="font-semibold text-white">{selectedCity.name}</span>
-              </p>
-            )}
+            <p className="mt-4 text-blue-200 text-sm">
+              📍 Showing listings in <span className="font-semibold text-white">{displayCity}</span>
+            </p>
           </div>
         </div>
       </section>
