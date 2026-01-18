@@ -44,21 +44,33 @@ export function CityProvider({ children }) {
       const citiesRef = collection(db, 'cities');
       const snapshot = await getDocs(citiesRef);
       
+      let citiesData = [];
       if (snapshot.empty) {
         // Seed default cities if collection is empty
         await seedCities();
-        setCities(defaultCities);
+        citiesData = defaultCities;
       } else {
-        const citiesData = snapshot.docs.map(doc => ({
+        citiesData = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         }));
-        setCities(citiesData);
+      }
+      
+      setCities(citiesData);
+      
+      // If no city is selected yet, set default city (Mumbai)
+      if (!selectedCity && citiesData.length > 0) {
+        const defaultCity = citiesData.find(c => c.id === 'mumbai') || citiesData[0];
+        setSelectedCity(defaultCity);
       }
     } catch (error) {
       console.error('Error loading cities:', error);
       // Use default cities as fallback
       setCities(defaultCities);
+      // Set default city as fallback
+      if (!selectedCity) {
+        setSelectedCity(defaultCities[2]); // Mumbai
+      }
     }
     setLoading(false);
   };

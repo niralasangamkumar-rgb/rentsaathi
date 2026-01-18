@@ -27,20 +27,30 @@ export default function Home() {
   }, [selectedCategory, currentUser, selectedCity]);
 
   const loadListings = async () => {
+    // Only load if city is selected
+    if (!selectedCity?.id) {
+      setLoading(false);
+      setFeaturedListings([]);
+      setRegularListings([]);
+      return;
+    }
+
     setLoading(true);
     try {
       // Load featured listings
       const featured = await getFeaturedListings(selectedCity?.id, 4);
-      setFeaturedListings(featured);
+      setFeaturedListings(featured || []);
 
       // Load regular listings
       const filters = {};
       if (selectedCategory) filters.category = selectedCategory;
       if (selectedCity) filters.cityId = selectedCity.id;
       const { listings } = await getRegularListings(filters, null, 8);
-      setRegularListings(listings);
+      setRegularListings(listings || []);
     } catch (error) {
       console.error('Error loading listings:', error);
+      setFeaturedListings([]);
+      setRegularListings([]);
     }
     setLoading(false);
   };
@@ -48,9 +58,10 @@ export default function Home() {
   const loadFavorites = async () => {
     try {
       const favs = await getUserFavorites(currentUser.uid);
-      setFavorites(favs);
+      setFavorites(favs || []);
     } catch (error) {
       console.error('Error loading favorites:', error);
+      setFavorites([]);
     }
   };
 
@@ -97,31 +108,47 @@ export default function Home() {
       </section>
 
       {/* Featured Listings */}
-      {featuredListings.length > 0 && (
+      {loading ? (
         <section className="py-6 bg-gradient-to-b from-amber-50 to-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center space-x-2">
-                <span className="text-xl">⭐</span>
-                <h2 className="text-xl font-bold text-gray-800">Featured Listings</h2>
-              </div>
-              <Link to="/browse" className="text-blue-600 hover:text-blue-700 font-medium text-sm">
-                View All →
-              </Link>
+            <div className="flex items-center space-x-2 mb-6">
+              <span className="text-xl">⭐</span>
+              <h2 className="text-xl font-bold text-gray-800">Featured Listings</h2>
             </div>
-
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {featuredListings.map((listing) => (
-                <ListingCard
-                  key={listing.id}
-                  listing={listing}
-                  isFavorited={favorites.includes(listing.id)}
-                  featured
-                />
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="bg-gray-100 rounded-xl h-72 animate-pulse" />
               ))}
             </div>
           </div>
         </section>
+      ) : (
+        featuredListings.length > 0 && (
+          <section className="py-6 bg-gradient-to-b from-amber-50 to-white">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-2">
+                  <span className="text-xl">⭐</span>
+                  <h2 className="text-xl font-bold text-gray-800">Featured Listings</h2>
+                </div>
+                <Link to="/browse" className="text-blue-600 hover:text-blue-700 font-medium text-sm">
+                  View All →
+                </Link>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {featuredListings.map((listing) => (
+                  <ListingCard
+                    key={listing.id}
+                    listing={listing}
+                    isFavorited={favorites.includes(listing.id)}
+                    featured
+                  />
+                ))}
+              </div>
+            </div>
+          </section>
+        )
       )}
 
       {/* Regular Listings */}

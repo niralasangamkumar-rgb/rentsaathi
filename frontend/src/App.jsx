@@ -58,9 +58,32 @@ function OwnerRoute({ children }) {
   return children;
 }
 
+// Layout wrapper for protected pages with navbar
+function ProtectedLayout({ children }) {
+  return (
+    <>
+      <Navbar />
+      {children}
+    </>
+  );
+}
+
+// Layout wrapper for pages that need city gate
+function ProtectedLayoutWithCityGate({ children }) {
+  return (
+    <>
+      <Navbar />
+      <CityGate>
+        {children}
+      </CityGate>
+    </>
+  );
+}
+
 function AppContent() {
   const { loading } = useAuth();
   
+  // Show loading spinner while auth is loading
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -72,70 +95,89 @@ function AppContent() {
     );
   }
   
+  // Single Routes component - all routes in one place
   return (
-    <Router>
-      <CityGate>
-        <div className="min-h-screen bg-gray-50">
-          <Navbar />
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/browse" element={<Browse />} />
-            <Route path="/listing/:id" element={<ListingDetail />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route
-              path="/create-listing"
-              element={
-                <OwnerRoute>
-                  <CreateListing />
-                </OwnerRoute>
-              }
-            />
-            <Route
-              path="/edit-listing/:id"
-              element={
-                <OwnerRoute>
-                  <CreateListing editMode={true} />
-                </OwnerRoute>
-              }
-            />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/favorites"
-              element={
-                <ProtectedRoute>
-                  <Favorites />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
-        </div>
-      </CityGate>
-    </Router>
+    <Routes>
+      {/* Auth routes - no navbar, no city gate */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      
+      {/* Home - with navbar ONLY (no city gate needed, Home handles empty city) */}
+      <Route path="/" element={<ProtectedLayout><Home /></ProtectedLayout>} />
+      
+      {/* Browse and details - with navbar and city gate */}
+      <Route path="/browse" element={<ProtectedLayoutWithCityGate><Browse /></ProtectedLayoutWithCityGate>} />
+      <Route path="/listing/:id" element={<ProtectedLayoutWithCityGate><ListingDetail /></ProtectedLayoutWithCityGate>} />
+      
+      {/* Create/Edit listing - owner only, with navbar and city gate */}
+      <Route
+        path="/create-listing"
+        element={
+          <ProtectedLayoutWithCityGate>
+            <OwnerRoute>
+              <CreateListing />
+            </OwnerRoute>
+          </ProtectedLayoutWithCityGate>
+        }
+      />
+      <Route
+        path="/edit-listing/:id"
+        element={
+          <ProtectedLayoutWithCityGate>
+            <OwnerRoute>
+              <CreateListing editMode={true} />
+            </OwnerRoute>
+          </ProtectedLayoutWithCityGate>
+        }
+      />
+      
+      {/* Dashboard - protected, with navbar and city gate */}
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedLayoutWithCityGate>
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          </ProtectedLayoutWithCityGate>
+        }
+      />
+      
+      {/* Favorites - protected, with navbar and city gate */}
+      <Route
+        path="/favorites"
+        element={
+          <ProtectedLayoutWithCityGate>
+            <ProtectedRoute>
+              <Favorites />
+            </ProtectedRoute>
+          </ProtectedLayoutWithCityGate>
+        }
+      />
+      
+      {/* Profile - protected, with navbar and city gate */}
+      <Route
+        path="/profile"
+        element={
+          <ProtectedLayoutWithCityGate>
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          </ProtectedLayoutWithCityGate>
+        }
+      />
+    </Routes>
   );
 }
 
 export default function App() {
   return (
-    <AuthProvider>
-      <CityProvider>
-        <AppContent />
-      </CityProvider>
-    </AuthProvider>
+    <Router>
+      <AuthProvider>
+        <CityProvider>
+          <AppContent />
+        </CityProvider>
+      </AuthProvider>
+    </Router>
   );
 }

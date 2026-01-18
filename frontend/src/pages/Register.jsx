@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import logoImage from '../assets/rentsaathi-logo.png';
 
 export default function Register() {
   const navigate = useNavigate();
@@ -148,15 +149,15 @@ export default function Register() {
   // Profile completion form
   if (showProfileForm) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
-        <div className="max-w-md w-full">
-          <div className="text-center mb-8">
-            <span className="text-4xl">🏠</span>
-            <h2 className="mt-4 text-2xl font-bold text-gray-800">Complete Your Profile</h2>
-            <p className="mt-2 text-gray-600">Just a few more details</p>
+      <div className="h-screen max-h-screen overflow-hidden bg-gray-50 flex flex-col items-center justify-center px-3 py-0">
+        <div className="max-w-md w-full flex flex-col" style={{ maxHeight: 'calc(100vh - 20px)' }}>
+          <div className="text-center mb-2">
+            <img src={logoImage} alt="RentSaathi Logo" className="h-10 w-auto object-contain sm:h-12 mx-auto" />
+            <h2 className="mt-2 text-xl sm:text-2xl font-bold text-gray-800">Complete Your Profile</h2>
+            <p className="mt-0.5 text-xs sm:text-sm text-gray-600">Just a few more details</p>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-8">
+          <div className="bg-white rounded-lg shadow-sm p-4 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 120px)' }}>
             {error && (
               <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-lg text-sm">
                 {error}
@@ -227,24 +228,23 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4" data-testid="register-page">
-      <div className="max-w-md w-full">
-        <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center space-x-2">
-            <span className="text-3xl">🏠</span>
-            <span className="text-2xl font-bold text-blue-600">RentSaathi</span>
+    <div className="h-screen max-h-screen overflow-hidden bg-gray-50 flex flex-col items-center justify-center px-3 py-0" data-testid="register-page">
+      <div className="max-w-md w-full flex flex-col" style={{ maxHeight: 'calc(100vh - 20px)' }}>
+        <div className="text-center mb-2">
+          <Link to="/" className="inline-flex items-center justify-center">
+            <img src={logoImage} alt="RentSaathi Logo" className="h-10 w-auto object-contain sm:h-12" />
           </Link>
-          <h2 className="mt-6 text-2xl font-bold text-gray-800">Create an account</h2>
-          <p className="mt-2 text-gray-600">Join RentSaathi today</p>
+          <h2 className="mt-2 text-xl sm:text-2xl font-bold text-gray-800">Create an account</h2>
+          <p className="mt-0.5 text-xs sm:text-sm text-gray-600">Join RentSaathi today</p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-8">
+        <div className="bg-white rounded-lg shadow-sm p-4 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 120px)' }}>
           {/* Auth Mode Toggle */}
-          <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
+          <div className="flex mb-2 bg-gray-100 rounded-lg p-0.5 gap-1">
             <button
               type="button"
               onClick={() => { setAuthMode('phone'); setError(''); }}
-              className={`flex-1 py-2 text-sm font-medium rounded-md transition ${
+              className={`flex-1 py-1 text-xs sm:text-sm font-medium rounded-md transition ${
                 authMode === 'phone' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600'
               }`}
             >
@@ -253,7 +253,7 @@ export default function Register() {
             <button
               type="button"
               onClick={() => { setAuthMode('email'); setError(''); }}
-              className={`flex-1 py-2 text-sm font-medium rounded-md transition ${
+              className={`flex-1 py-1 text-xs sm:text-sm font-medium rounded-md transition ${
                 authMode === 'email' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600'
               }`}
             >
@@ -262,7 +262,7 @@ export default function Register() {
           </div>
 
           {error && (
-            <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-lg text-sm" data-testid="error-message">
+            <div className="mb-2 p-2 bg-red-50 text-red-600 rounded-lg text-xs" data-testid="error-message">
               {error}
             </div>
           )}
@@ -271,11 +271,11 @@ export default function Register() {
           {authMode === 'phone' && (
             <>
               {!otpSent ? (
-                <form onSubmit={handleSendOTP} className="space-y-5">
+                <form onSubmit={handleSendOTP} className="space-y-2">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Phone Number</label>
                     <div className="flex">
-                      <span className="inline-flex items-center px-3 border border-r-0 border-gray-200 bg-gray-50 text-gray-500 rounded-l-lg">
+                      <span className="inline-flex items-center px-2 border border-r-0 border-gray-200 bg-gray-50 text-gray-500 rounded-l-lg text-sm">
                         +91
                       </span>
                       <input
@@ -283,7 +283,7 @@ export default function Register() {
                         value={phone}
                         onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
                         placeholder="9876543210"
-                        className="flex-1 px-4 py-3 border border-gray-200 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="flex-1 px-3 py-2 border border-gray-200 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                         required
                         data-testid="phone-input"
                       />
@@ -295,33 +295,33 @@ export default function Register() {
                   <button
                     type="submit"
                     disabled={otpLoading}
-                    className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50"
+                    className="w-full py-2 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700 transition disabled:opacity-50"
                     data-testid="send-otp-btn"
                   >
                     {otpLoading ? 'Sending OTP...' : 'Send OTP'}
                   </button>
                 </form>
               ) : (
-                <form onSubmit={handleVerifyOTP} className="space-y-5">
+                <form onSubmit={handleVerifyOTP} className="space-y-2">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Enter OTP</label>
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Enter OTP</label>
                     <input
                       type="text"
                       value={otp}
                       onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                       placeholder="Enter 6-digit OTP"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-2xl tracking-widest"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-lg tracking-widest"
                       maxLength={6}
                       required
                       data-testid="otp-input"
                     />
-                    <p className="text-sm text-gray-500 mt-2">OTP sent to +91{phone}</p>
+                    <p className="text-xs text-gray-500 mt-1">OTP sent to +91{phone}</p>
                   </div>
 
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50"
+                    className="w-full py-2 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700 transition disabled:opacity-50"
                     data-testid="verify-otp-btn"
                   >
                     {loading ? 'Verifying...' : 'Verify OTP'}

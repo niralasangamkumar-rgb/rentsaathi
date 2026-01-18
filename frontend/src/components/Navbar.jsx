@@ -37,7 +37,14 @@ export default function Navbar({ onFilterClick }) {
               <img 
                 src={logoImage} 
                 alt="RentSaathi Logo" 
-                className="h-20 sm:h-28 w-auto object-contain"
+                className="h-24 sm:h-32 lg:h-28 w-auto object-contain object-left"
+                style={{
+                  imageRendering: 'crisp-edges',
+                  backfaceVisibility: 'hidden',
+                  WebkitFontSmoothing: 'antialiased',
+                  WebkitBackfaceVisibility: 'hidden',
+                  filter: 'contrast(1.05)'
+                }}
               />
             </Link>
             <div className="hidden sm:block">

@@ -17,10 +17,17 @@ export default function CitySelector({ compact = false }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const filteredCities = cities.filter(city =>
-    city.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    city.state?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredCities = (cities || []).filter(city => {
+    // Safe defaults using optional chaining and fallback strings
+    const cityName = city?.name || '';
+    const cityState = city?.state || '';
+    const searchLower = (searchTerm || '').toLowerCase();
+    
+    return (
+      cityName.toLowerCase().includes(searchLower) ||
+      cityState.toLowerCase().includes(searchLower)
+    );
+  });
 
   const handleSelect = (city) => {
     selectCity(city);

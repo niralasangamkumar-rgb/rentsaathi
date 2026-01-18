@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import logoImage from '../assets/rentsaathi-logo.png';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -96,20 +97,19 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4" data-testid="login-page">
-      <div className="max-w-md w-full">
-        <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center space-x-2">
-            <span className="text-3xl">🏠</span>
-            <span className="text-2xl font-bold text-blue-600">RentSaathi</span>
+    <div className="h-screen max-h-screen overflow-hidden bg-gray-50 flex flex-col items-center justify-center px-3 py-0" data-testid="login-page">
+      <div className="max-w-md w-full flex flex-col" style={{ maxHeight: 'calc(100vh - 20px)' }}>
+        <div className="text-center mb-2">
+          <Link to="/" className="inline-flex items-center justify-center">
+            <img src={logoImage} alt="RentSaathi Logo" className="h-10 w-auto object-contain sm:h-12" />
           </Link>
-          <h2 className="mt-6 text-2xl font-bold text-gray-800">Welcome back</h2>
-          <p className="mt-2 text-gray-600">Sign in to your account</p>
+          <h2 className="mt-2 text-xl sm:text-2xl font-bold text-gray-800">Welcome back</h2>
+          <p className="mt-0.5 text-xs sm:text-sm text-gray-600">Sign in to your account</p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-8">
+        <div className="bg-white rounded-lg shadow-sm p-4 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 120px)' }}>
           {/* Auth Mode Toggle */}
-          <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
+          <div className="flex mb-4 bg-gray-100 rounded-lg p-1">
             <button
               type="button"
               onClick={() => { setAuthMode('phone'); setError(''); }}
@@ -140,11 +140,11 @@ export default function Login() {
           {authMode === 'phone' && (
             <>
               {!otpSent ? (
-                <form onSubmit={handleSendOTP} className="space-y-5">
+                <form onSubmit={handleSendOTP} className="space-y-2">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Phone Number</label>
                     <div className="flex">
-                      <span className="inline-flex items-center px-3 border border-r-0 border-gray-200 bg-gray-50 text-gray-500 rounded-l-lg">
+                      <span className="inline-flex items-center px-2 border border-r-0 border-gray-200 bg-gray-50 text-gray-500 rounded-l-lg text-sm">
                         +91
                       </span>
                       <input
@@ -152,7 +152,7 @@ export default function Login() {
                         value={phone}
                         onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
                         placeholder="9876543210"
-                        className="flex-1 px-4 py-3 border border-gray-200 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="flex-1 px-3 py-2 border border-gray-200 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                         required
                         data-testid="phone-input"
                       />
@@ -164,33 +164,33 @@ export default function Login() {
                   <button
                     type="submit"
                     disabled={otpLoading}
-                    className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50"
+                    className="w-full py-2 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700 transition disabled:opacity-50"
                     data-testid="send-otp-btn"
                   >
                     {otpLoading ? 'Sending OTP...' : 'Send OTP'}
                   </button>
                 </form>
               ) : (
-                <form onSubmit={handleVerifyOTP} className="space-y-5">
+                <form onSubmit={handleVerifyOTP} className="space-y-2">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Enter OTP</label>
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Enter OTP</label>
                     <input
                       type="text"
                       value={otp}
                       onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                       placeholder="Enter 6-digit OTP"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-2xl tracking-widest"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-lg tracking-widest"
                       maxLength={6}
                       required
                       data-testid="otp-input"
                     />
-                    <p className="text-sm text-gray-500 mt-2">OTP sent to +91{phone}</p>
+                    <p className="text-xs text-gray-500 mt-1">OTP sent to +91{phone}</p>
                   </div>
 
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50"
+                    className="w-full py-2 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700 transition disabled:opacity-50"
                     data-testid="verify-otp-btn"
                   >
                     {loading ? 'Verifying...' : 'Verify OTP'}
