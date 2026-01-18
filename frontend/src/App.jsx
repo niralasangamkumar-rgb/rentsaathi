@@ -166,6 +166,16 @@ function AppContent() {
           </ProtectedLayoutWithCityGate>
         }
       />
+      
+      {/* Fallback route for undefined paths */}
+      <Route path="*" element={
+        <ProtectedLayout>
+          <div className="min-h-[60vh] flex flex-col items-center justify-center text-gray-500 text-lg">
+            <span>Page not found.</span>
+            <a href="/" className="text-blue-600 underline mt-2">Go to Home</a>
+          </div>
+        </ProtectedLayout>
+      } />
     </Routes>
   );
 }

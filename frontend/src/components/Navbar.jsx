@@ -33,11 +33,11 @@ export default function Navbar({ onFilterClick }) {
         <div className="flex justify-between items-center h-20 sm:h-20 lg:h-16">
           {/* Left: Logo and City Selector */}
           <div className="flex items-center space-x-4 flex-1 min-w-0">
-            <Link to="/" className="flex-shrink-0 hover:opacity-85 transition duration-200" data-testid="logo">
+            <Link to="/" className="flex-shrink-0 hover:opacity-85 transition duration-200 -ml-2 sm:-ml-4" data-testid="logo">
               <img 
                 src={logoImage} 
                 alt="RentSaathi Logo" 
-                className="h-24 sm:h-32 lg:h-28 w-auto object-contain object-left"
+                className="h-28 sm:h-38 lg:h-34 w-auto object-contain object-left"
                 style={{
                   imageRendering: 'crisp-edges',
                   backfaceVisibility: 'hidden',
@@ -165,7 +165,8 @@ export default function Navbar({ onFilterClick }) {
                   <Link
                     to="/favorites"
                     className="flex items-center px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition"
-                    onClick={() => setMobileMenuOpen(false)}
+                    onClick={() => setMobileMenuOpen(false)
+                    }
                   >
                     <span className="text-lg mr-3">❤️</span>
                     My Likes

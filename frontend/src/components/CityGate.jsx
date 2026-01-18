@@ -11,10 +11,16 @@ export default function CityGate({ children }) {
   const authPages = ['/login', '/register', '/complete-profile'];
   const isAuthPage = authPages.some(page => location.pathname.startsWith(page));
 
-  const filteredCities = cities.filter(city =>
-    city.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    city.state?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Defensive filtering to prevent crash
+  const filteredCities = (cities || []).filter(city => {
+    const cityName = city?.name || '';
+    const cityState = city?.state || '';
+    const searchLower = (searchTerm || '').toLowerCase();
+    return (
+      cityName.toLowerCase().includes(searchLower) ||
+      cityState.toLowerCase().includes(searchLower)
+    );
+  });
 
   const handleSelect = (city) => {
     selectCity(city);
