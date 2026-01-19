@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { useCity } from '../contexts/CityContext';
+import { CITIES } from '../config/cities';
 
 export default function CitySelector({ compact = false }) {
-  const { selectedCity, cities, loading, selectCity } = useCity();
+  const { selectedCity, loading, selectCity } = useCity();
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const dropdownRef = useRef(null);
@@ -17,12 +18,11 @@ export default function CitySelector({ compact = false }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const filteredCities = (cities || []).filter(city => {
-    // Safe defaults using optional chaining and fallback strings
+  // Use centralized CITIES list
+  const filteredCities = (CITIES || []).filter(city => {
     const cityName = city?.name || '';
     const cityState = city?.state || '';
     const searchLower = (searchTerm || '').toLowerCase();
-    
     return (
       cityName.toLowerCase().includes(searchLower) ||
       cityState.toLowerCase().includes(searchLower)

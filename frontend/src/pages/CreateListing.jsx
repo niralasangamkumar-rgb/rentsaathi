@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useCity } from '../contexts/CityContext';
-import { createListing, updateListing, getListing, categories } from '../services/listingService';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { db } from '../config/firebase';
+import { categories } from '../services/listingService';
 import ImageUploader from '../components/ImageUploader';
 
 const amenitiesList = [
@@ -24,7 +26,11 @@ export default function CreateListing({ editMode = false }) {
     description: '',
     category: '',
     price: '',
-    area: '', // locality/area
+    securityDeposit: '',
+    city: '',
+    area: '',
+    tenantPreference: '',
+    furnishing: '',
     phone: userProfile?.phone || '',
     images: [],
     amenities: []
@@ -83,50 +89,52 @@ export default function CreateListing({ editMode = false }) {
     e.preventDefault();
     setError('');
 
-    if (!formData.title || !formData.category || !formData.price || !formData.area) {
+    // Validation
+    if (!formData.title || !formData.description || !formData.category || !formData.price || !formData.securityDeposit || !formData.city || !formData.area || !formData.tenantPreference || !formData.furnishing) {
       setError('Please fill in all required fields');
       return;
     }
-
     if (!formData.phone) {
       setError('Please provide a phone number for contact');
+      return;
+    }
+    if (!currentUser || userProfile?.role !== 'owner') {
+      setError('Only owners can post listings.');
       return;
     }
 
     setLoading(true);
     try {
-      const listingData = {
+      const docData = {
         title: formData.title,
         description: formData.description,
         category: formData.category,
         price: parseFloat(formData.price),
+        securityDeposit: parseFloat(formData.securityDeposit),
+        city: formData.city,
         area: formData.area,
+        tenantPreference: formData.tenantPreference,
+        furnishing: formData.furnishing,
         phone: formData.phone,
         images: formData.images,
         amenities: formData.amenities,
+        ownerId: currentUser.uid,
+        ownerName: userProfile?.name || currentUser.displayName || currentUser.email || 'Anonymous',
+        status: 'active',
+        createdAt: serverTimestamp(),
         contact: {
           phone: formData.phone,
-          email: currentUser?.email || ''
-        },
-        ownerId: currentUser.uid,
-        ownerName: currentUser.displayName || userProfile?.name || 'Anonymous',
-        cityId: selectedCity?.id || '',
-        cityName: selectedCity?.name || '',
-        featured: false // Default to non-featured
+          email: currentUser.email || ''
+        }
       };
-
-      if (editMode && id) {
-        await updateListing(id, listingData);
-      } else {
-        await createListing(listingData);
-      }
-
-      navigate('/dashboard');
-    } catch (error) {
-      console.error('Error saving listing:', error);
+      await addDoc(collection(db, 'listings'), docData);
+      setLoading(false);
+      setError('');
+      navigate('/browse');
+    } catch (err) {
+      setLoading(false);
       setError('Failed to save listing. Please try again.');
     }
-    setLoading(false);
   };
 
   // Check if user is authenticated and is an owner
@@ -167,17 +175,104 @@ export default function CreateListing({ editMode = false }) {
             </div>
           )}
 
-          {/* City Info */}
-          {selectedCity && (
-            <div className="mb-6 p-3 bg-blue-50 rounded-lg flex items-center">
-              <svg className="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-              </svg>
-              <span className="text-sm text-blue-700">Posting in <strong>{selectedCity.name}</strong></span>
-            </div>
-          )}
+          {/* ...existing code... */}
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Property Type */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Property Type *</label>
+              <select
+                name="category"
+                value={formData.category}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+                data-testid="property-type-select"
+              >
+                <option value="">Select type</option>
+                <option value="pg">PG</option>
+                <option value="hostel">Hostel</option>
+                <option value="room">Room</option>
+                <option value="flat">Flat</option>
+              </select>
+            </div>
+
+            {/* Security Deposit */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Security Deposit *</label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">₹</span>
+                <input
+                  type="number"
+                  name="securityDeposit"
+                  value={formData.securityDeposit}
+                  onChange={handleChange}
+                  placeholder="5000"
+                  className="w-full pl-8 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                  data-testid="security-deposit-input"
+                />
+              </div>
+            </div>
+
+            {/* City Dropdown */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">City *</label>
+              <select
+                name="city"
+                value={formData.city}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+                data-testid="city-select"
+              >
+                <option value="">Select city</option>
+                <option value="Patna">Patna</option>
+                <option value="Delhi">Delhi</option>
+                <option value="Noida">Noida</option>
+                <option value="Lucknow">Lucknow</option>
+                <option value="Gaya">Gaya</option>
+                <option value="Muzaffarpur">Muzaffarpur</option>
+                <option value="Bhagalpur">Bhagalpur</option>
+              </select>
+            </div>
+
+            {/* Tenant Preference */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Tenant Preference *</label>
+              <select
+                name="tenantPreference"
+                value={formData.tenantPreference}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+                data-testid="tenant-preference-select"
+              >
+                <option value="">Select preference</option>
+                <option value="Boys">Boys</option>
+                <option value="Girls">Girls</option>
+                <option value="Family">Family</option>
+                <option value="Any">Any</option>
+              </select>
+            </div>
+
+            {/* Furnishing */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Furnishing *</label>
+              <select
+                name="furnishing"
+                value={formData.furnishing}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+                data-testid="furnishing-select"
+              >
+                <option value="">Select furnishing</option>
+                <option value="Furnished">Furnished</option>
+                <option value="Semi-Furnished">Semi-Furnished</option>
+                <option value="Unfurnished">Unfurnished</option>
+              </select>
+            </div>
             {/* Category */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>

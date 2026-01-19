@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useCity } from '../contexts/CityContext';
+import { CITIES } from '../config/cities';
 
 export default function CityGate({ children }) {
-  const { selectedCity, cities, loading, selectCity } = useCity();
+  const { selectedCity, loading, selectCity } = useCity();
   const [searchTerm, setSearchTerm] = useState('');
   const location = useLocation();
   
@@ -12,7 +13,7 @@ export default function CityGate({ children }) {
   const isAuthPage = authPages.some(page => location.pathname.startsWith(page));
 
   // Defensive filtering to prevent crash
-  const filteredCities = (cities || []).filter(city => {
+  const filteredCities = (CITIES || []).filter(city => {
     const cityName = city?.name || '';
     const cityState = city?.state || '';
     const searchLower = (searchTerm || '').toLowerCase();
@@ -63,6 +64,7 @@ export default function CityGate({ children }) {
         </div>
 
         {/* Cities Grid */}
+        {/* Always show CITIES, loading only affects skeleton */}
         {loading ? (
           <div className="grid grid-cols-2 gap-3">
             {[...Array(4)].map((_, i) => (
