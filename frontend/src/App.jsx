@@ -12,6 +12,10 @@ import Favorites from './pages/Favorites';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Footer from './components/Footer';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import Terms from './pages/TermsAndConditions';
+import Contact from './pages/Contact';
 import './App.css';
 
 // Protected Route - requires login
@@ -64,6 +68,7 @@ function ProtectedLayout({ children }) {
     <>
       <Navbar />
       {children}
+      <Footer />
     </>
   );
 }
@@ -76,6 +81,7 @@ function ProtectedLayoutWithCityGate({ children }) {
       <CityGate>
         {children}
       </CityGate>
+      <Footer />
     </>
   );
 }
@@ -166,6 +172,11 @@ function AppContent() {
           </ProtectedLayoutWithCityGate>
         }
       />
+      
+      {/* Public pages */}
+      <Route path="/privacy-policy" element={<ProtectedLayout><PrivacyPolicy /></ProtectedLayout>} />
+      <Route path="/terms" element={<ProtectedLayout><Terms /></ProtectedLayout>} />
+      <Route path="/contact" element={<ProtectedLayout><Contact /></ProtectedLayout>} />
       
       {/* Fallback route for undefined paths */}
       <Route path="*" element={

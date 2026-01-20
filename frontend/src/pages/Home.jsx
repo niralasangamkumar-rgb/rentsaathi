@@ -7,6 +7,7 @@ import { getRegularListings, getFeaturedListings, categories } from '../services
 import { useAuth } from '../contexts/AuthContext';
 import { useCity } from '../contexts/CityContext';
 import { getUserFavorites } from '../services/favoriteService';
+import { CITIES } from '../config/cities';
 
 export default function Home() {
   const { currentUser, userProfile } = useAuth();
@@ -18,6 +19,7 @@ export default function Home() {
   const [favorites, setFavorites] = useState([]);
   const [displayCity, setDisplayCity] = useState('Mumbai');
   const [searchQuery, setSearchQuery] = useState('');
+  const [filteredListings, setFilteredListings] = useState([]);
 
   useEffect(() => {
     loadListings();
@@ -76,20 +78,65 @@ export default function Home() {
     }
   };
 
+  // Helper: extract keywords from search
+  function parseSearchKeywords(text) {
+    const lower = text.toLowerCase();
+    // Cities
+    const city = CITIES.find(c => lower.includes(c.name.toLowerCase()));
+    // Categories
+    const categoryMap = {
+      hostel: ['hostel'],
+      pg: ['pg'],
+      flat: ['flat'],
+      room: ['room']
+    };
+    let category = null;
+    for (const [cat, words] of Object.entries(categoryMap)) {
+      if (words.some(w => lower.includes(w))) {
+        category = cat;
+        break;
+      }
+    }
+    // Tenant preference
+    let tenantPreference = null;
+    if (/(boys?)/.test(lower)) tenantPreference = 'Boys';
+    else if (/(girls?)/.test(lower)) tenantPreference = 'Girls';
+    else if (/family/.test(lower)) tenantPreference = 'Family';
+    // BHK
+    let bhk = null;
+    const bhkMatch = lower.match(/([1-9])\s*bhk/);
+    if (bhkMatch) bhk = bhkMatch[1] + 'BHK';
+    return { city, category, tenantPreference, bhk };
+  }
+
+  // Filter listings based on search
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setFilteredListings(regularListings);
+      return;
+    }
+    const { city, category, tenantPreference, bhk } = parseSearchKeywords(searchQuery);
+    let filtered = regularListings;
+    if (city) filtered = filtered.filter(l => (l.city || l.cityName || '').toLowerCase() === city.name.toLowerCase());
+    if (category) filtered = filtered.filter(l => (l.category || '').toLowerCase() === category);
+    if (tenantPreference) filtered = filtered.filter(l => (l.tenantPreference || '').toLowerCase() === tenantPreference.toLowerCase());
+    if (bhk) filtered = filtered.filter(l => (l.bhk || '').toLowerCase() === bhk.toLowerCase());
+    setFilteredListings(filtered);
+  }, [searchQuery, regularListings]);
+
   return (
     <div className="min-h-screen bg-gray-50" data-testid="home-page">
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-blue-600 to-blue-800 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 sm:py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1 sm:py-4">
           <div className="text-center max-w-3xl mx-auto">
-            <h1 className="text-3xl md:text-4xl font-bold mb-1" data-testid="hero-title">
+            <h1 className="text-2xl md:text-4xl font-bold mb-1" data-testid="hero-title">
               Find Your Perfect
               <span className="text-blue-200"> Rental</span>
             </h1>
-            <p className="text-base md:text-lg text-blue-100 mb-3">
+            <p className="text-sm md:text-lg text-blue-100 mb-2 md:mb-3">
               Discover hostels, PGs, rooms, flats, commercial spaces, and vehicle rentals all in one place.
             </p>
-            
             {/* Search Bar */}
             <div className="max-w-2xl mx-auto">
               <SearchBar 
@@ -98,9 +145,8 @@ export default function Home() {
                 onSearch={handleCitySearch} 
               />
             </div>
-
             {/* Selected City Badge */}
-            <p className="mt-4 text-blue-200 text-sm">
+            <p className="mt-2 md:mt-4 text-blue-200 text-xs md:text-sm">
               📍 Showing listings in <span className="font-semibold text-white">{displayCity}</span>
             </p>
           </div>
@@ -176,9 +222,9 @@ export default function Home() {
                 <div key={i} className="bg-gray-100 rounded-xl h-72 animate-pulse" />
               ))}
             </div>
-          ) : regularListings.length > 0 ? (
+          ) : filteredListings.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {regularListings.map((listing) => (
+              {filteredListings.map((listing) => (
                 <ListingCard
                   key={listing.id}
                   listing={listing}
@@ -188,15 +234,13 @@ export default function Home() {
             </div>
           ) : (
             <div className="text-center py-12">
-              <p className="text-gray-500">No listings found in {selectedCity?.name || 'your area'}.</p>
-              {currentUser && userProfile?.role === 'owner' && (
-                <Link
-                  to="/create-listing"
-                  className="inline-block mt-4 px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition"
-                >
-                  Post Your First Listing
-                </Link>
-              )}
+              <Link
+                to="/create-listing"
+                className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition"
+                data-testid="empty-listing-cta"
+              >
+                Post Your First Listing
+              </Link>
             </div>
           )}
         </div>

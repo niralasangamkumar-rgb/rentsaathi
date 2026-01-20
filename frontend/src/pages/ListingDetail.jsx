@@ -235,6 +235,17 @@ export default function ListingDetail() {
                   </div>
                 </div>
               )}
+
+              {/* Call Owner Button (below details, mobile-friendly) */}
+              {listing?.phone && (
+                <a
+                  href={`tel:${listing.phone}`}
+                  className="block w-full mt-6 px-4 py-3 bg-blue-600 text-white rounded-lg font-medium text-center hover:bg-blue-700 transition md:w-1/2 md:mx-auto"
+                  data-testid="call-owner-main-btn"
+                >
+                  Call Owner
+                </a>
+              )}
             </div>
           </div>
 

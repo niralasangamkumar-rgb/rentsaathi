@@ -36,6 +36,8 @@ export default function CreateListing({ editMode = false }) {
     amenities: []
   });
 
+  const isVehicle = formData.category === 'bike_rent' || formData.category === 'car_rent';
+
   useEffect(() => {
     // Redirect if not owner
     if (userProfile && userProfile.role !== 'owner') {
@@ -175,8 +177,6 @@ export default function CreateListing({ editMode = false }) {
             </div>
           )}
 
-          {/* ...existing code... */}
-
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Property Type */}
             <div>
@@ -194,10 +194,51 @@ export default function CreateListing({ editMode = false }) {
                 <option value="hostel">Hostel</option>
                 <option value="room">Room</option>
                 <option value="flat">Flat</option>
+                <option value="commercial_shop">Commercial Shop</option>
+                <option value="commercial_office">Commercial Office</option>
+                <option value="bike_rent">Bike Rent</option>
+                <option value="car_rent">Car Rent</option>
               </select>
             </div>
 
-            {/* Security Deposit */}
+            {/* Vehicle Name/Model (for vehicles only) */}
+            {isVehicle && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Vehicle Name / Model *</label>
+                <input
+                  type="text"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleChange}
+                  placeholder="e.g., Honda Activa, Maruti Swift"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                  data-testid="vehicle-title-input"
+                />
+              </div>
+            )}
+
+            {/* Rent Per Day (for vehicles only) */}
+            {isVehicle && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Rent (per day) *</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">₹</span>
+                  <input
+                    type="number"
+                    name="price"
+                    value={formData.price}
+                    onChange={handleChange}
+                    placeholder="500"
+                    className="w-full pl-8 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                    data-testid="vehicle-price-input"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Security Deposit (always show) */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Security Deposit *</label>
               <div className="relative">
@@ -215,7 +256,7 @@ export default function CreateListing({ editMode = false }) {
               </div>
             </div>
 
-            {/* City Dropdown */}
+            {/* City Dropdown (always show) */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">City *</label>
               <select
@@ -237,99 +278,110 @@ export default function CreateListing({ editMode = false }) {
               </select>
             </div>
 
-            {/* Tenant Preference */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Tenant Preference *</label>
-              <select
-                name="tenantPreference"
-                value={formData.tenantPreference}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-                data-testid="tenant-preference-select"
-              >
-                <option value="">Select preference</option>
-                <option value="Boys">Boys</option>
-                <option value="Girls">Girls</option>
-                <option value="Family">Family</option>
-                <option value="Any">Any</option>
-              </select>
-            </div>
-
-            {/* Furnishing */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Furnishing *</label>
-              <select
-                name="furnishing"
-                value={formData.furnishing}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-                data-testid="furnishing-select"
-              >
-                <option value="">Select furnishing</option>
-                <option value="Furnished">Furnished</option>
-                <option value="Semi-Furnished">Semi-Furnished</option>
-                <option value="Unfurnished">Unfurnished</option>
-              </select>
-            </div>
-            {/* Category */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                {categories.map((cat) => (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, category: cat.id }))}
-                    className={`p-3 rounded-lg border-2 text-center transition ${
-                      formData.category === cat.id
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-blue-300'
-                    }`}
-                    data-testid={`category-btn-${cat.id}`}
-                  >
-                    <span className="text-lg block">{cat.icon}</span>
-                    <span className="text-xs font-medium text-gray-700">{cat.name}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Title */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Title *</label>
-              <input
-                type="text"
-                name="title"
-                value={formData.title}
-                onChange={handleChange}
-                placeholder="e.g., Spacious 2BHK Flat in Koramangala"
-                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-                data-testid="title-input"
-              />
-            </div>
-
-            {/* Price */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Rent (per month) *</label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">₹</span>
-                <input
-                  type="number"
-                  name="price"
-                  value={formData.price}
+            {/* Tenant Preference (hide for vehicles) */}
+            {!isVehicle && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Tenant Preference *</label>
+                <select
+                  name="tenantPreference"
+                  value={formData.tenantPreference}
                   onChange={handleChange}
-                  placeholder="10000"
-                  className="w-full pl-8 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
-                  data-testid="price-input"
+                  data-testid="tenant-preference-select"
+                >
+                  <option value="">Select preference</option>
+                  <option value="Boys">Boys</option>
+                  <option value="Girls">Girls</option>
+                  <option value="Family">Family</option>
+                  <option value="Any">Any</option>
+                </select>
+              </div>
+            )}
+
+            {/* Furnishing (hide for vehicles) */}
+            {!isVehicle && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Furnishing *</label>
+                <select
+                  name="furnishing"
+                  value={formData.furnishing}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                  data-testid="furnishing-select"
+                >
+                  <option value="">Select furnishing</option>
+                  <option value="Furnished">Furnished</option>
+                  <option value="Semi-Furnished">Semi-Furnished</option>
+                  <option value="Unfurnished">Unfurnished</option>
+                </select>
+              </div>
+            )}
+
+            {/* Category (hide for vehicles) */}
+            {!isVehicle && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                  {categories.map((cat) => (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, category: cat.id }))}
+                      className={`p-3 rounded-lg border-2 text-center transition ${
+                        formData.category === cat.id
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-blue-300'
+                      }`}
+                      data-testid={`category-btn-${cat.id}`}
+                    >
+                      <span className="text-lg block">{cat.icon}</span>
+                      <span className="text-xs font-medium text-gray-700">{cat.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Title (hide for vehicles, already shown as Vehicle Name) */}
+            {!isVehicle && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Title *</label>
+                <input
+                  type="text"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleChange}
+                  placeholder="e.g., Spacious 2BHK Flat in Koramangala"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                  data-testid="title-input"
                 />
               </div>
-            </div>
+            )}
 
-            {/* Area/Locality */}
+            {/* Price (hide for vehicles, use Rent Per Day instead) */}
+            {!isVehicle && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Rent (per month) *</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">₹</span>
+                  <input
+                    type="number"
+                    name="price"
+                    value={formData.price}
+                    onChange={handleChange}
+                    placeholder="10000"
+                    className="w-full pl-8 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                    data-testid="price-input"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Area/Locality (always show) */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Area / Locality *</label>
               <input
@@ -344,21 +396,21 @@ export default function CreateListing({ editMode = false }) {
               />
             </div>
 
-            {/* Description */}
+            {/* Description (always show) */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
               <textarea
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
-                placeholder="Describe your property or vehicle..."
+                placeholder={isVehicle ? 'Describe your vehicle...' : 'Describe your property...'}
                 rows={4}
                 className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                 data-testid="description-input"
               />
             </div>
 
-            {/* Phone Number */}
+            {/* Phone Number (always show) */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Contact Phone *</label>
               <div className="flex">
@@ -379,7 +431,7 @@ export default function CreateListing({ editMode = false }) {
               <p className="text-xs text-gray-500 mt-1">This will be visible to users for contact</p>
             </div>
 
-            {/* Images */}
+            {/* Images (always show) */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Photos</label>
               <ImageUploader
@@ -389,27 +441,29 @@ export default function CreateListing({ editMode = false }) {
               />
             </div>
 
-            {/* Amenities */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Amenities</label>
-              <div className="flex flex-wrap gap-2">
-                {amenitiesList.map((amenity) => (
-                  <button
-                    key={amenity}
-                    type="button"
-                    onClick={() => handleAmenityToggle(amenity)}
-                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${
-                      formData.amenities.includes(amenity)
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                    data-testid={`amenity-${amenity}`}
-                  >
-                    {amenity}
-                  </button>
-                ))}
+            {/* Amenities (hide for vehicles) */}
+            {!isVehicle && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Amenities</label>
+                <div className="flex flex-wrap gap-2">
+                  {amenitiesList.map((amenity) => (
+                    <button
+                      key={amenity}
+                      type="button"
+                      onClick={() => handleAmenityToggle(amenity)}
+                      className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${
+                        formData.amenities.includes(amenity)
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                      data-testid={`amenity-${amenity}`}
+                    >
+                      {amenity}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Submit */}
             <div className="flex gap-4 pt-4">
