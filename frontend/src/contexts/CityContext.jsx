@@ -12,7 +12,6 @@ export function useCity() {
 const defaultCities = [
   { id: 'patna', name: 'Patna', state: 'Bihar' },
   { id: 'delhi', name: 'Delhi', state: 'Delhi' },
-  { id: 'mumbai', name: 'Mumbai', state: 'Maharashtra' },
   { id: 'bangalore', name: 'Bangalore', state: 'Karnataka' }
 ];
 
@@ -58,19 +57,12 @@ export function CityProvider({ children }) {
       
       setCities(citiesData);
       
-      // If no city is selected yet, set default city (Mumbai)
-      if (!selectedCity && citiesData.length > 0) {
-        const defaultCity = citiesData.find(c => c.id === 'mumbai') || citiesData[0];
-        setSelectedCity(defaultCity);
-      }
+      // Do not set any default city; selectedCity remains null until user selects/searches
     } catch (error) {
       console.error('Error loading cities:', error);
       // Use default cities as fallback
       setCities(defaultCities);
-      // Set default city as fallback
-      if (!selectedCity) {
-        setSelectedCity(defaultCities[2]); // Mumbai
-      }
+      // Do not set any default city as fallback; selectedCity remains null
     }
     setLoading(false);
   };

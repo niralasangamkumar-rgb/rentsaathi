@@ -236,6 +236,39 @@ export default function ListingDetail() {
                 </div>
               )}
 
+              {/* Location Section with View on Map */}
+              {(listing.area || listing.location?.address) && listing.cityName && (
+                <div className="mt-4">
+                  <h3 className="font-semibold text-gray-800 mb-1">Location</h3>
+                  <div className="text-gray-700 text-sm mb-2">
+                    <div>
+                      <span className="font-medium">Area:</span> {listing.area || listing.location?.address}
+                    </div>
+                    <div>
+                      <span className="font-medium">City:</span> {listing.cityName}
+                    </div>
+                    {listing.landmark && (
+                      <div>
+                        <span className="font-medium">Landmark:</span> {listing.landmark}
+                      </div>
+                    )}
+                  </div>
+                  {/* View on Map Button */}
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((listing.landmark ? listing.landmark + ',' : '') + (listing.area || listing.location?.address) + ',' + listing.cityName)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block w-full md:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg font-medium text-center hover:bg-blue-700 transition mb-2"
+                    style={{ marginTop: 8 }}
+                  >
+                    View on Map
+                  </a>
+                  <div className="text-xs text-gray-500 mt-1">
+                    Location shown is approximate. Exact location will be shared by the owner after contact.
+                  </div>
+                </div>
+              )}
+
               {/* Call Owner Button (below details, mobile-friendly) */}
               {listing?.phone && (
                 <a

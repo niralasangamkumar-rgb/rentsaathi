@@ -159,7 +159,8 @@ export default function Browse() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col md:flex-row md:items-center gap-4">
             {/* City Info */}
-            {selectedCity && (
+            {/* City Info: Show only if city is selected and not Mumbai */}
+            {selectedCity?.name && selectedCity.name.toLowerCase() !== 'mumbai' && (
               <div className="flex items-center text-sm text-gray-600">
                 <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -560,7 +561,9 @@ export default function Browse() {
             {selectedCategory
               ? `${selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)} Rentals`
               : 'All Listings'}
-            {selectedCity && <span className="text-gray-500 font-normal text-base ml-2">in {selectedCity.name}</span>}
+            {selectedCity?.name && selectedCity.name.toLowerCase() !== 'mumbai' && (
+              <span className="text-gray-500 font-normal text-base ml-2">in {selectedCity.name}</span>
+            )}
           </h1>
           <span className="text-sm text-gray-500">{listings.length} results</span>
         </div>

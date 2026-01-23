@@ -16,6 +16,7 @@ import Footer from './components/Footer';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import Terms from './pages/TermsAndConditions';
 import Contact from './pages/Contact';
+import MyListings from './pages/MyListings';
 import './App.css';
 
 // Protected Route - requires login
@@ -114,6 +115,18 @@ function AppContent() {
       {/* Browse and details - with navbar and city gate */}
       <Route path="/browse" element={<ProtectedLayoutWithCityGate><Browse /></ProtectedLayoutWithCityGate>} />
       <Route path="/listing/:id" element={<ProtectedLayoutWithCityGate><ListingDetail /></ProtectedLayoutWithCityGate>} />
+      
+      {/* My Listings - owner only, with navbar and city gate */}
+      <Route
+        path="/my-listings"
+        element={
+          <ProtectedLayoutWithCityGate>
+            <OwnerRoute>
+              <MyListings />
+            </OwnerRoute>
+          </ProtectedLayoutWithCityGate>
+        }
+      />
       
       {/* Create/Edit listing - owner only, with navbar and city gate */}
       <Route

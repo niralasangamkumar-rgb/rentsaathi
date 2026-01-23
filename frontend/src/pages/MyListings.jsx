@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { collection, query, where, orderBy, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { collection, query, where, orderBy, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import ListingCard from '../components/ListingCard';
 
@@ -51,6 +51,19 @@ export default function MyListings() {
     setDeletingId(null);
   };
 
+  // Toggle active/inactive status
+  const handleToggleStatus = async (id, currentStatus) => {
+    try {
+      await updateDoc(doc(db, 'listings', id), {
+        status: currentStatus === 'active' ? 'inactive' : 'active',
+        updatedAt: new Date().toISOString()
+      });
+      setListings(listings => listings.map(l => l.id === id ? { ...l, status: currentStatus === 'active' ? 'inactive' : 'active' } : l));
+    } catch (err) {
+      setError('Failed to update status.');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-6" data-testid="my-listings-page">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -81,10 +94,26 @@ export default function MyListings() {
                     {deletingId === listing.id ? 'Deleting...' : 'Delete'}
                   </button>
                 </div>
-                <div className="absolute bottom-4 left-4">
+                <div className="absolute top-16 right-4 flex gap-2 items-center">
                   <span className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${listing.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>
                     {listing.status === 'active' ? 'Active' : 'Inactive'}
                   </span>
+                  <label className="flex items-center cursor-pointer">
+                    <div className="relative">
+                      <input
+                        type="checkbox"
+                        checked={listing.status === 'active'}
+                        onChange={() => handleToggleStatus(listing.id, listing.status)}
+                        disabled={deletingId === listing.id}
+                        className="sr-only"
+                      />
+                      <div className={`block w-10 h-6 rounded-full ${listing.status === 'active' ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                      <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition ${listing.status === 'active' ? 'translate-x-4' : ''}`}></div>
+                    </div>
+                    <span className="ml-2 text-xs font-medium text-gray-700">
+                      {listing.status === 'active' ? 'Deactivate' : 'Activate'}
+                    </span>
+                  </label>
                 </div>
               </div>
             ))}

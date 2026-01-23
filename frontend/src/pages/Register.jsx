@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { signInWithPhoneNumber } from 'firebase/auth';
+import { auth, setupRecaptcha } from '../config/firebase';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import logoImage from '../assets/rentsaathi-logo.png';
@@ -35,52 +37,51 @@ export default function Register() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Handle sending OTP
+  // Handle sending OTP (Firebase v9, invisible reCAPTCHA, +91 country code)
   const handleSendOTP = async (e) => {
     e.preventDefault();
     setError('');
-    
     if (!phone || phone.length < 10) {
       setError('Please enter a valid phone number');
       return;
     }
-    
     setOtpLoading(true);
-    const result = await sendOTP(phone, 'recaptcha-container');
-    setOtpLoading(false);
-    
-    if (result.success) {
+    try {
+      // Always use +91 for India
+      const phoneNumber = phone.startsWith('+91') ? phone : `+91${phone}`;
+      // Initialize reCAPTCHA only once
+      const verifier = setupRecaptcha();
+      const confirmation = await signInWithPhoneNumber(auth, phoneNumber, verifier);
+      window.confirmationResult = confirmation; // Store globally for verify step
       setOtpSent(true);
-    } else {
-      setError(result.error || 'Failed to send OTP. Please try again.');
+    } catch (error) {
+      setError(error.message || 'Failed to send OTP. Please try again.');
     }
+    setOtpLoading(false);
   };
 
-  // Handle verifying OTP
+  // Handle verifying OTP (Firebase v9)
   const handleVerifyOTP = async (e) => {
     e.preventDefault();
     setError('');
-    
     if (!otp || otp.length !== 6) {
       setError('Please enter a valid 6-digit OTP');
       return;
     }
-    
     setLoading(true);
-    const result = await verifyOTP(otp);
-    
-    if (result.success) {
-      // Check if user profile exists
+    try {
+      if (!window.confirmationResult) throw new Error('No OTP request in progress');
+      const result = await window.confirmationResult.confirm(otp);
+      // Check if user profile exists (reuse your logic)
       const profile = await fetchUserProfile(result.user.uid);
       if (!profile) {
-        // New user - show profile form
         setUserId(result.user.uid);
         setShowProfileForm(true);
       } else {
         navigate('/');
       }
-    } else {
-      setError(result.error || 'Invalid OTP. Please try again.');
+    } catch (error) {
+      setError(error.message || 'Invalid OTP. Please try again.');
     }
     setLoading(false);
   };

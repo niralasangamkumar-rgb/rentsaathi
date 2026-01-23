@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import ListingCard from '../components/ListingCard';
 import CategoryFilter from '../components/CategoryFilter';
 import SearchBar from '../components/SearchBar';
-import { getRegularListings, getFeaturedListings, categories } from '../services/listingService';
+import { getRegularListings, getFeaturedListings, getUserListings, categories } from '../services/listingService';
 import { useAuth } from '../contexts/AuthContext';
 import { useCity } from '../contexts/CityContext';
 import { getUserFavorites } from '../services/favoriteService';
@@ -15,47 +15,63 @@ export default function Home() {
   const [featuredListings, setFeaturedListings] = useState([]);
   const [regularListings, setRegularListings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [listingsLoading, setListingsLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [lastDoc, setLastDoc] = useState(null);
+  const observer = useRef();
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [favorites, setFavorites] = useState([]);
-  const [displayCity, setDisplayCity] = useState('Mumbai');
+  // displayCity state: null by default, set only after user search/select
+  const [displayCity, setDisplayCity] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredListings, setFilteredListings] = useState([]);
+  const [ownerListingCount, setOwnerListingCount] = useState(0);
 
+
+  // Reset listings and pagination on category/search/city change
   useEffect(() => {
-    loadListings();
+    setRegularListings([]);
+    setLastDoc(null);
+    setHasMore(true);
+    fetchListings(true);
+    // eslint-disable-next-line
+  }, [selectedCategory, searchQuery, selectedCity]);
+
+  // Load favorites on user change
+  useEffect(() => {
     if (currentUser) {
       loadFavorites();
     }
-  }, [selectedCategory, currentUser, selectedCity]);
+  }, [currentUser]);
 
-  const loadListings = async () => {
-    // Only load if city is selected
-    if (!selectedCity?.id) {
-      setLoading(false);
-      setFeaturedListings([]);
-      setRegularListings([]);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      // Load featured listings
-      const featured = await getFeaturedListings(selectedCity?.id, 4);
-      setFeaturedListings(featured || []);
-
-      // Load regular listings
-      const filters = {};
-      if (selectedCategory) filters.category = selectedCategory;
-      if (selectedCity) filters.cityId = selectedCity.id;
-      const { listings } = await getRegularListings(filters, null, 8);
-      setRegularListings(listings || []);
-    } catch (error) {
-      console.error('Error loading listings:', error);
-      setFeaturedListings([]);
-      setRegularListings([]);
-    }
+  // Fetch listings (initial or next batch)
+  const fetchListings = useCallback(async (reset = false) => {
+    if (listingsLoading || (!hasMore && !reset)) return;
+    setListingsLoading(true);
+    const filters = {};
+    if (selectedCategory) filters.category = selectedCategory;
+    if (selectedCity?.id) filters.cityId = selectedCity.id;
+    let startAfterDoc = reset ? null : lastDoc;
+    const { listings, lastDoc: newLastDoc } = await getRegularListings(filters, startAfterDoc, 25);
+    let newListings = reset ? listings : [...regularListings, ...listings];
+    setRegularListings(newListings);
+    setLastDoc(newLastDoc);
+    setHasMore(!!newLastDoc && listings.length === 25);
+    setListingsLoading(false);
     setLoading(false);
-  };
+  }, [selectedCity, selectedCategory, lastDoc, hasMore, listingsLoading, regularListings]);
+
+  // Infinite scroll observer
+  const lastListingRef = useCallback(node => {
+    if (listingsLoading) return;
+    if (observer.current) observer.current.disconnect();
+    observer.current = new window.IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        fetchListings();
+      }
+    });
+    if (node) observer.current.observe(node);
+  }, [listingsLoading, hasMore, fetchListings]);
 
   const loadFavorites = async () => {
     try {
@@ -69,12 +85,11 @@ export default function Home() {
 
   const handleCitySearch = (term) => {
     if (term.trim()) {
-      const capitalizedCity = term
-        .trim()
-        .split(' ')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-        .join(' ');
-      setDisplayCity(capitalizedCity);
+      const lower = term.toLowerCase();
+      const found = CITIES.find(c => lower.includes(c.name.toLowerCase()));
+      setDisplayCity(found ? found.name : null);
+    } else {
+      setDisplayCity(null);
     }
   };
 
@@ -109,20 +124,32 @@ export default function Home() {
     return { city, category, tenantPreference, bhk };
   }
 
-  // Filter listings based on search
+
+  // Filter listings based on search (client-side for tenant/bhk)
   useEffect(() => {
-    if (!searchQuery.trim()) {
-      setFilteredListings(regularListings);
-      return;
-    }
-    const { city, category, tenantPreference, bhk } = parseSearchKeywords(searchQuery);
     let filtered = regularListings;
-    if (city) filtered = filtered.filter(l => (l.city || l.cityName || '').toLowerCase() === city.name.toLowerCase());
-    if (category) filtered = filtered.filter(l => (l.category || '').toLowerCase() === category);
-    if (tenantPreference) filtered = filtered.filter(l => (l.tenantPreference || '').toLowerCase() === tenantPreference.toLowerCase());
-    if (bhk) filtered = filtered.filter(l => (l.bhk || '').toLowerCase() === bhk.toLowerCase());
+    if (searchQuery.trim()) {
+      const { city, category, tenantPreference, bhk } = parseSearchKeywords(searchQuery);
+      if (city) filtered = filtered.filter(l => (l.city || l.cityName || '').toLowerCase() === city.name.toLowerCase());
+      if (category) filtered = filtered.filter(l => (l.category || '').toLowerCase() === category);
+      if (tenantPreference) filtered = filtered.filter(l => (l.tenantPreference || '').toLowerCase() === tenantPreference.toLowerCase());
+      if (bhk) filtered = filtered.filter(l => (l.bhk || '').toLowerCase() === bhk.toLowerCase());
+    }
     setFilteredListings(filtered);
   }, [searchQuery, regularListings]);
+
+  // Fetch owner listing count
+  useEffect(() => {
+    async function fetchOwnerCount() {
+      if (userProfile?.role === 'owner' && currentUser) {
+        const listings = await getUserListings(currentUser.uid);
+        setOwnerListingCount(listings.length);
+      } else {
+        setOwnerListingCount(0);
+      }
+    }
+    fetchOwnerCount();
+  }, [userProfile, currentUser]);
 
   return (
     <div className="min-h-screen bg-gray-50" data-testid="home-page">
@@ -147,7 +174,7 @@ export default function Home() {
             </div>
             {/* Selected City Badge */}
             <p className="mt-2 md:mt-4 text-blue-200 text-xs md:text-sm">
-              📍 Showing listings in <span className="font-semibold text-white">{displayCity}</span>
+              {displayCity ? `📍 Showing listings in ${displayCity}` : '📍 Showing all listings'}
             </p>
           </div>
         </div>
@@ -215,7 +242,7 @@ export default function Home() {
             />
           </div>
 
-          {/* Listings Grid */}
+          {/* Listings Grid with Infinite Scroll */}
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {[...Array(4)].map((_, i) => (
@@ -224,47 +251,53 @@ export default function Home() {
             </div>
           ) : filteredListings.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {filteredListings.map((listing) => (
-                <ListingCard
-                  key={listing.id}
-                  listing={listing}
-                  isFavorited={favorites.includes(listing.id)}
-                />
-              ))}
+              {filteredListings.map((listing, idx) => {
+                if (idx === filteredListings.length - 1) {
+                  return (
+                    <div ref={lastListingRef} key={listing.id}>
+                      <ListingCard
+                        listing={listing}
+                        isFavorited={favorites.includes(listing.id)}
+                      />
+                    </div>
+                  );
+                }
+                return (
+                  <ListingCard
+                    key={listing.id}
+                    listing={listing}
+                    isFavorited={favorites.includes(listing.id)}
+                  />
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-12">
-              <Link
-                to="/create-listing"
-                className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition"
-                data-testid="empty-listing-cta"
-              >
-                Post Your First Listing
-              </Link>
+              {userProfile?.role === 'owner' ? (
+                <Link
+                  to="/create-listing"
+                  className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition"
+                  data-testid="empty-listing-cta"
+                >
+                  {ownerListingCount === 0 && 'Post Your First Listing'}
+                  {ownerListingCount === 1 && 'Post Your Second Listing'}
+                  {ownerListingCount === 2 && 'Post Your Third Listing'}
+                  {ownerListingCount > 2 && `Post Your ${ordinal(ownerListingCount + 1)} Listing`}
+                </Link>
+              ) : (
+                <span className="text-gray-500">No listings found.</span>
+              )}
+            </div>
+          )}
+          {/* Infinite scroll loading spinner */}
+          {listingsLoading && !loading && (
+            <div className="flex justify-center py-6">
+              <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
             </div>
           )}
         </div>
       </section>
 
-      {/* Categories Section */}
-      <section className="py-8 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-xl font-bold text-gray-800 mb-6">Browse by Category</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-            {categories.map((category) => (
-              <Link
-                key={category.id}
-                to={`/browse?category=${category.id}`}
-                className="bg-white rounded-xl p-4 text-center shadow-sm border border-gray-100 hover:shadow-md hover:border-blue-200 transition"
-                data-testid={`category-card-${category.id}`}
-              >
-                <span className="text-2xl block mb-2">{category.icon}</span>
-                <span className="text-xs font-medium text-gray-700">{category.name}</span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* How It Works */}
       <section className="py-12 bg-white">
@@ -355,4 +388,10 @@ export default function Home() {
       </footer>
     </div>
   );
+}
+
+// Helper function for ordinal numbers
+function ordinal(n) {
+  const s = ["th", "st", "nd", "rd"], v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }

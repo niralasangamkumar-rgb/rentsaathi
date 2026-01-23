@@ -21,7 +21,7 @@ A mobile-first rental marketplace for hostels, PGs, rooms, flats, commercial spa
 
 ### 2. City-Based Navigation
 - Users must select a city to continue
-- Supported cities: Patna, Delhi, Mumbai, Bangalore (extensible)
+- Supported cities: Patna, Delhi, Bangalore (extensible)
 - Listings are filtered by selected city
 
 ### 3. Listings

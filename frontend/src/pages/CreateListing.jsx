@@ -465,6 +465,23 @@ export default function CreateListing({ editMode = false }) {
               </div>
             )}
 
+            {/* Landmark (for property listings only) */}
+            {!isVehicle && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nearby Landmark (Optional)
+                </label>
+                <input
+                  type="text"
+                  name="landmark"
+                  value={formData.landmark || ''}
+                  onChange={handleChange}
+                  placeholder="Near AIIMS, Metro Station, Mall"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            )}
+
             {/* Submit */}
             <div className="flex gap-4 pt-4">
               <button

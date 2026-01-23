@@ -197,27 +197,8 @@ export default function Navbar({ onFilterClick }) {
                       My Likes
                     </Link>
 
-                    <Link
-                      to="/dashboard"
-                      className="flex items-center px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition"
-                      onClick={() => setMobileMenuOpen(false)}
-                      data-testid="nav-dashboard"
-                    >
-                      <span className="text-lg mr-3">📋</span>
-                      My Listings
-                    </Link>
-
-                    {isOwner && (
+                    {isOwner ? (
                       <>
-                        <Link
-                          to="/create-listing"
-                          className="flex items-center px-4 py-3 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition shadow-sm"
-                          onClick={() => setMobileMenuOpen(false)}
-                          data-testid="nav-list-property-mobile"
-                        >
-                          <span className="text-lg mr-3">➕</span>
-                          List Property
-                        </Link>
                         <Link
                           to="/my-listings"
                           className="flex items-center px-4 py-3 rounded-lg bg-gray-100 text-blue-700 font-semibold hover:bg-blue-100 transition shadow-sm"
@@ -227,8 +208,17 @@ export default function Navbar({ onFilterClick }) {
                           <span className="text-lg mr-3">📋</span>
                           My Listings
                         </Link>
+                        <Link
+                          to="/create-listing"
+                          className="flex items-center px-4 py-3 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition shadow-sm"
+                          onClick={() => setMobileMenuOpen(false)}
+                          data-testid="nav-list-property-mobile"
+                        >
+                          <span className="text-lg mr-3">➕</span>
+                          List Property
+                        </Link>
                       </>
-                    )}
+                    ) : null}
                   </>
                 )}
               </div>

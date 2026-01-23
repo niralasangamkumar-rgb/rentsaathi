@@ -1,6 +1,5 @@
 // Centralized static city list for RentSaathi
 export const CITIES = [
-  { id: 'mumbai', name: 'Mumbai', state: 'Maharashtra' },
   { id: 'delhi', name: 'Delhi', state: 'Delhi' },
   { id: 'noida', name: 'Noida', state: 'Uttar Pradesh' },
   { id: 'patna', name: 'Patna', state: 'Bihar' },
