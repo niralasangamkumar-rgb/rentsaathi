@@ -94,12 +94,12 @@ export default function MyListings() {
                     {deletingId === listing.id ? 'Deleting...' : 'Delete'}
                   </button>
                 </div>
-                <div className="absolute top-16 right-4 flex gap-2 items-center">
-                  <span className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${listing.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>
+                <div className="absolute top-16 right-0 flex items-center justify-end w-full pr-2">
+                  <span className={`mr-2 text-xs font-semibold ${listing.status === 'active' ? 'text-green-700' : 'text-gray-400'}`}>
                     {listing.status === 'active' ? 'Active' : 'Inactive'}
                   </span>
                   <label className="flex items-center cursor-pointer">
-                    <div className="relative">
+                    <div className="relative ml-2">
                       <input
                         type="checkbox"
                         checked={listing.status === 'active'}
@@ -110,9 +110,6 @@ export default function MyListings() {
                       <div className={`block w-10 h-6 rounded-full ${listing.status === 'active' ? 'bg-green-500' : 'bg-gray-300'}`}></div>
                       <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition ${listing.status === 'active' ? 'translate-x-4' : ''}`}></div>
                     </div>
-                    <span className="ml-2 text-xs font-medium text-gray-700">
-                      {listing.status === 'active' ? 'Deactivate' : 'Activate'}
-                    </span>
                   </label>
                 </div>
               </div>

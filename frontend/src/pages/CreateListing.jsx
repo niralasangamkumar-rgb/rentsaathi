@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useCity } from '../contexts/CityContext';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { addDoc, collection, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { categories } from '../services/listingService';
 import ImageUploader from '../components/ImageUploader';
+import { getListing, updateListing } from '../services/listingService';
 
 const amenitiesList = [
   'WiFi', 'AC', 'Parking', 'Power Backup', 'Security', 'CCTV',
@@ -58,11 +59,15 @@ export default function CreateListing({ editMode = false }) {
           title: listing.title || '',
           description: listing.description || '',
           category: listing.category || '',
-          price: listing.price?.toString() || '',
+          price: listing.price !== undefined && listing.price !== null ? listing.price.toString() : '',
+          securityDeposit: listing.securityDeposit !== undefined && listing.securityDeposit !== null ? listing.securityDeposit.toString() : '',
+          city: listing.city || '',
           area: listing.area || '',
-          phone: listing.contact?.phone || listing.phone || '',
-          images: listing.images || [],
-          amenities: listing.amenities || []
+          tenantPreference: listing.tenantPreference || '',
+          furnishing: listing.furnishing || '',
+          phone: (listing.contact?.phone || listing.phone || ''),
+          images: Array.isArray(listing.images) ? listing.images : [],
+          amenities: Array.isArray(listing.amenities) ? listing.amenities : [],
         });
       } else {
         navigate('/dashboard');
@@ -123,16 +128,28 @@ export default function CreateListing({ editMode = false }) {
         ownerId: currentUser.uid,
         ownerName: userProfile?.name || currentUser.displayName || currentUser.email || 'Anonymous',
         status: 'active',
-        createdAt: serverTimestamp(),
         contact: {
           phone: formData.phone,
           email: currentUser.email || ''
         }
       };
-      await addDoc(collection(db, 'listings'), docData);
+      if (editMode && id) {
+        // Update existing listing, do not create new
+        await updateDoc(doc(db, 'listings', id), {
+          ...docData,
+          updatedAt: new Date().toISOString()
+        });
+      } else {
+        // Create new listing
+        await addDoc(collection(db, 'listings'), {
+          ...docData,
+          createdAt: serverTimestamp(),
+          updatedAt: new Date().toISOString()
+        });
+      }
       setLoading(false);
       setError('');
-      navigate('/browse');
+      navigate('/my-listings');
     } catch (err) {
       setLoading(false);
       setError('Failed to save listing. Please try again.');
